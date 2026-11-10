@@ -4,22 +4,20 @@
    - Arrastre / swipe para girar, flechas del teclado, botones anterior/siguiente.
    - Clic en la pieza del frente: busca esa familia en el catálogo.
    - Sin dependencias (CSS 3D). Funciona también abriendo el HTML desde el disco.
-   Para cambiar nombres o búsquedas, define window.BP_HERO3D en assets/config.js:
-     window.BP_HERO3D = { piezas: [{ id: 'master', img: 'assets/piezas/master.webp',
-                                      nombre: 'Bomba de freno', buscar: 'bomba de freno' }, …] };
+   Para cambiar nombres o destinos, define window.BP_HERO3D en assets/config.js:
+     window.BP_HERO3D = { piezas: [{ id: 'bomba', img: 'assets/piezas/bomba.webp',
+                                      nombre: 'Bomba de freno', ir: { fam: 'BOMBA', sub: 'FRENO' } }, …] };
    ========================================================================== */
 (function () {
   'use strict';
 
+  // "ir" es el filtro del catálogo que se aplica al hacer clic (familia y subfamilia)
   var PIEZAS = [
-    { id: 'master',    nombre: 'Bomba de freno (máster)', buscar: 'bomba de freno' },
-    { id: 'servo',     nombre: 'Servofreno',              buscar: 'servo' },
-    { id: 'pastillas', nombre: 'Pastillas de freno',      buscar: 'pastilla' },
-    { id: 'disco',     nombre: 'Disco de freno',          buscar: 'disco' },
-    { id: 'caliper',   nombre: 'Cáliper y disco',         buscar: 'caliper' },
-    { id: 'bombin',    nombre: 'Bombín de rueda',         buscar: 'bombin' },
-    { id: 'zapatas',   nombre: 'Zapatas',                 buscar: 'zapata' },
-    { id: 'abs',       nombre: 'Módulo hidráulico',       buscar: 'hidraulico' }
+    { id: 'bomba',     nombre: 'Bomba de freno',     ir: { fam: 'BOMBA', sub: 'FRENO' } },
+    { id: 'master',    nombre: 'Máster de freno',    ir: { fam: 'MASTER', sub: 'FRENO' } },   // foto del catálogo: 44610-0K010AIL
+    { id: 'pastillas', nombre: 'Pastillas de freno', ir: { fam: 'PASTILLA' } },
+    { id: 'bombin',    nombre: 'Bombín de rueda',    ir: { fam: 'BOMBIN', sub: 'RUEDA' } },
+    { id: 'zapatas',   nombre: 'Kits de tambor',     ir: { fam: 'KIT', sub: 'TAMBOR' } }
   ];
 
   var TILT = 13 * Math.PI / 180;      // inclinación de la cámara (rad)
@@ -35,7 +33,7 @@
     return {
       id: p.id,
       nombre: p.nombre,
-      buscar: p.buscar || p.nombre,
+      ir: p.ir || { q: p.buscar || p.nombre },
       img: p.img || ('assets/piezas/' + p.id + '.webp')
     };
   });
@@ -49,7 +47,7 @@
     '<circle cx="24" cy="24" r="19" fill="none" stroke="currentColor" stroke-width="5"/>' +
     '<circle cx="24" cy="24" r="6.5" fill="none" stroke="currentColor" stroke-width="3"/>' +
     '<g fill="currentColor"><circle cx="24" cy="12.5" r="1.8"/><circle cx="34.9" cy="20.4" r="1.8"/><circle cx="30.8" cy="33.3" r="1.8"/><circle cx="17.2" cy="33.3" r="1.8"/><circle cx="13.1" cy="20.4" r="1.8"/></g>' +
-    '<path d="M30.5 4.6 A20.5 20.5 0 0 1 43.6 18" fill="none" stroke="#D71920" stroke-width="7.5" stroke-linecap="round"/></svg>';
+    '<path d="M30.5 4.6 A20.5 20.5 0 0 1 43.6 18" fill="none" class="logo__arc" stroke="#1E56D9" stroke-width="7.5" stroke-linecap="round"/></svg>';
   var ARROW_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
   var ARROW_R = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   var ARROW_GO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -61,7 +59,6 @@
   root.setAttribute('aria-roledescription', 'carrusel 3D');
   root.setAttribute('aria-label', 'Piezas de frenos y embragues');
   root.innerHTML =
-    '<p class="orbit__hint" aria-hidden="true">Arrastra para girar</p>' +
     '<div class="orbit__scene"><div class="orbit__world">' +
       '<div class="orbit__track"></div><div class="orbit__track--in"></div>' +
       '<div class="orbit__core">' + LOGO + '</div>' +
@@ -115,8 +112,8 @@
   function measure() {
     var w = scene.clientWidth, h = scene.clientHeight;
     if (!w || !h) return;
-    R = Math.min(w * 0.37, h * 0.44);
-    SIZE = R * 0.74;
+    R = Math.min(w * 0.34, h * 0.40);
+    SIZE = R * 0.98;
     root.style.setProperty('--o-r', R + 'px');
     root.style.setProperty('--o-size', SIZE + 'px');
     root.style.setProperty('--o-floor', (SIZE * 0.46) + 'px');
@@ -341,13 +338,8 @@
   });
 
   function buscarEnCatalogo(p) {
-    var q = document.getElementById('q');
+    if (typeof window.BP_GO === 'function') { window.BP_GO(p.ir); return; }
     var cat = document.getElementById('catalogo');
-    if (q) {
-      q.value = p.buscar;
-      ['input', 'change'].forEach(function (type) { q.dispatchEvent(new Event(type, { bubbles: true })); });
-      q.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter' }));
-    }
     if (cat) cat.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
   }
 

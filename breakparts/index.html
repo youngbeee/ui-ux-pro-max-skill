@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>BREAK PARTS · Repuestos para frenos y embragues</title>
 <meta name="description" content="Repuestos para frenos y embragues: bombas, bombines, pistones, kits, pastillas, máster y servos. Catálogo digital con más de 2,700 productos y cotización por WhatsApp.">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#0B1B3F">
 <link rel="canonical" href="https://www.breakparts.pe/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_PE">
@@ -16,34 +16,43 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="preload" href="data/productos.json" as="fetch" crossorigin>
+<link rel="preload" href="assets/piezas/bomba.webp" as="image">
 <link rel="stylesheet" href="assets/app.css">
-<link rel="stylesheet" href="assets/hero3d.css">
-<link rel="preload" href="assets/piezas/master.webp" as="image" fetchpriority="high">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "AutoPartsStore", "name": "BREAK PARTS", "description": "Repuestos para frenos y embragues: bombas, bombines, pistones, kits, pastillas, máster y servos. Catálogo digital con más de 2,700 productos y cotización por WhatsApp.", "telephone": "+51945051499", "url": "https://www.breakparts.pe/", "contactPoint": {"@type": "ContactPoint", "telephone": "+51945051499", "contactType": "sales", "availableLanguage": "es"}}</script>
 </head>
 <body>
 <noscript><p style="padding:16px">Para usar el catálogo activa JavaScript, o escríbenos por WhatsApp al 945 051 499: https://wa.me/51945051499</p></noscript>
 <a class="skip" href="#catalogo">Ir al catálogo</a>
 
+<div class="topbar">
+  <div class="wrap topbar__in">
+    <span>Frenos · Embragues · Sistemas hidráulicos</span>
+    <span>Cotiza por WhatsApp<span class="topbar__more"> · Respuesta con precio, stock y plazo</span></span>
+    <a href="https://wa.me/51945051499" target="_blank" rel="noopener">945 051 499</a>
+  </div>
+</div>
+
 <header class="nav" id="top">
   <div class="wrap nav__in">
+    <nav class="nav__links" id="nav-links" aria-label="Secciones">
+      <a href="#catalogo">Catálogo</a>
+      <a href="#categorias">Familias</a>
+      <a href="#cotizar">Cotizar</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
     <a class="logo" href="#top" aria-label="BREAK PARTS, inicio">
       <svg class="logo__mark" viewBox="0 0 48 48" aria-hidden="true">
         <circle cx="24" cy="24" r="19" fill="none" stroke="currentColor" stroke-width="5"/>
         <circle cx="24" cy="24" r="6.5" fill="none" stroke="currentColor" stroke-width="3"/>
         <g fill="currentColor"><circle cx="24" cy="12.5" r="1.8"/><circle cx="34.9" cy="20.4" r="1.8"/><circle cx="30.8" cy="33.3" r="1.8"/><circle cx="17.2" cy="33.3" r="1.8"/><circle cx="13.1" cy="20.4" r="1.8"/></g>
-        <path d="M30.5 4.6 A20.5 20.5 0 0 1 43.6 18" fill="none" stroke="#D71920" stroke-width="7.5" stroke-linecap="round"/>
+        <path class="logo__arc" d="M30.5 4.6 A20.5 20.5 0 0 1 43.6 18" fill="none" stroke="#1E56D9" stroke-width="7.5" stroke-linecap="round"/>
       </svg>
       <span class="logo__word"><b>BREAK</b><span>PARTS</span></span>
     </a>
-    <nav class="nav__links" id="nav-links" aria-label="Secciones">
-      <a href="#catalogo">Catálogo</a>
-      <a href="#categorias">Categorías</a>
-      <a href="#por-que">Por qué elegirnos</a>
-      <a href="#contacto">Contacto</a>
-    </nav>
     <div class="nav__act">
+      <button class="nav__ic" id="nav-search" type="button" aria-label="Buscar en el catálogo">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+      </button>
       <button class="btn-quote" id="open-quote" type="button" aria-label="Abrir lista de cotización">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8M6 8h12l-1 12H7L6 8Z"/><path d="M10 12v4M14 12v4"/></svg>
         <span class="btn-quote__t">Cotización</span>
@@ -55,53 +64,83 @@
 </header>
 
 <main>
-  <!-- HERO -->
+  <!-- HÉROE -->
   <section class="hero" aria-labelledby="hero-t">
-    <div class="wrap">
-      <div class="hero__panel">
+    <div class="wrap hero__in">
+      <p class="hero__word" aria-hidden="true">BREAK</p>
+      <div class="hero__row">
+        <div class="hero__stage" id="stage"><!-- Sistema 3D de piezas: lo construye assets/hero3d.js --></div>
         <div class="hero__copy">
-          <p class="eyebrow"><span class="dot"></span>Frenos · Embragues · Sistemas hidráulicos</p>
           <h1 id="hero-t" class="hero__t">Precisión y seguridad <em>en cada frenada</em></h1>
-          <p class="hero__sub">Encuentra los repuestos que necesitas. Calidad, variedad y soluciones especializadas para tu vehículo.</p>
+          <p class="hero__sub">Repuestos para frenos y embragues. Busca por código, vehículo o medida y pide tu cotización por WhatsApp.</p>
           <div class="hero__cta">
-            <a class="btn btn--red" href="#catalogo">Explorar catálogo
+            <a class="btn btn--dark btn--caps" href="#catalogo">Explorar catálogo
               <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-            <a class="btn btn--line" href="#cotizar">Solicitar cotización</a>
+            <a class="btn btn--line btn--caps" href="#cotizar">Solicitar cotización</a>
           </div>
+        </div>
+        <div class="hero__side">
+          <p class="hero__est">Catálogo digital 2026</p>
           <dl class="hero__stats">
             <div><dt>Productos</dt><dd data-stat="items">2,755</dd></div>
             <div><dt>Marcas</dt><dd data-stat="marcas">40</dd></div>
-            <div><dt>Con foto</dt><dd data-stat="fotos">1,457</dd></div>
+            <div><dt>Con foto</dt><dd data-stat="fotos">1,468</dd></div>
           </dl>
         </div>
-        <div class="hero__stage" id="stage">
-          <!-- Sistema 3D de piezas: lo construye assets/hero3d.js -->
-          <!-- Elementos del disco anterior: ocultos, se dejan solo para que app.js no falle al buscarlos -->
-          <img class="hero__fallback" alt="" hidden>
-          <canvas id="disc3d" hidden aria-hidden="true" width="1" height="1"></canvas>
-          <figure class="float float--a" data-slug="d025116" hidden><div class="float__img"></div><figcaption><small>Pistón</small><span class="mono">D025116</span></figcaption></figure>
-          <figure class="float float--b" data-slug="30610-01j60nbn" hidden><div class="float__img"></div><figcaption><small>Bomba de embrague</small><span class="mono">30610-01J60NBN</span></figcaption></figure>
-          <figure class="float float--c" data-slug="30620-b5000nbn" hidden><div class="float__img"></div><figcaption><small>Bombín</small><span class="mono">30620-B5000NBN</span></figcaption></figure>
-        </div>
-      </div>
-      <div class="gauge" aria-label="Buscar por medida">
-        <span class="gauge__lbl">Busca por medida</span>
-        <div class="gauge__track" id="gauge"></div>
       </div>
     </div>
   </section>
 
-  <!-- CATEGORÍAS -->
-  <section class="sec" id="categorias" aria-labelledby="cat-t">
+  <!-- FAMILIAS -->
+  <section class="band" id="categorias" aria-labelledby="cat-t">
     <div class="wrap">
-      <div class="sec__head">
-        <p class="num">01</p>
-        <div>
-          <h2 id="cat-t" class="sec__t">Familias de productos</h2>
-          <p class="sec__lead">Organizadas igual que nuestro catálogo: por familia y subfamilia.</p>
-        </div>
+      <div class="band__head">
+        <h2 id="cat-t" class="band__t">Familias de productos</h2>
+        <p class="band__lead">Organizadas igual que nuestro catálogo: por familia y subfamilia.</p>
       </div>
       <div class="bento" id="bento"></div>
+    </div>
+  </section>
+
+  <!-- MEDIDAS -->
+  <section class="feature" aria-labelledby="med-t">
+    <div class="wrap feature__in">
+      <div>
+        <p class="kicker">Búsqueda por medida</p>
+        <h2 id="med-t" class="feature__t">La medida exacta, a la primera</h2>
+        <p class="feature__p">Pistones, bombas y bombines se piden por diámetro. Elige la medida y el catálogo te muestra solo lo que calza.</p>
+        <div class="gauge__track" id="gauge" aria-label="Medidas más buscadas"></div>
+        <a class="btn btn--dark btn--caps" href="#catalogo">Ver todas las medidas
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <figure class="feature__fig">
+        <button type="button" data-open="44610-0k010ail" aria-label="Ver ficha del máster de freno 44610-0K010AIL">
+          <img src="assets/piezas/master.webp" alt="Máster de freno Toyota Hilux Vigo, código 44610-0K010AIL" width="480" height="480" loading="lazy" decoding="async">
+        </button>
+        <figcaption><span>Máster de freno · Toyota Hilux Vigo 10"</span><span class="mono">44610-0K010AIL</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- POR QUÉ -->
+  <section class="trust" id="por-que" aria-label="Por qué elegir BREAK PARTS">
+    <div class="wrap trust__in">
+      <div class="trust__item">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12"/><circle cx="16" cy="16" r="4"/><path d="M16 4v3M16 25v3M4 16h3M25 16h3"/></svg>
+        <div><b>Especialistas en frenos y embragues</b><span>Todo el catálogo gira alrededor de estos dos sistemas.</span></div>
+      </div>
+      <div class="trust__item">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="4" width="10" height="10" rx="1.5"/><rect x="18" y="4" width="10" height="10" rx="1.5"/><rect x="4" y="18" width="10" height="10" rx="1.5"/><rect x="18" y="18" width="10" height="10" rx="1.5"/></svg>
+        <div><b><span data-stat="items">2,755</span> productos, <span data-stat="marcas">40</span> marcas</b><span>Con código, medida y aplicación para buscar rápido.</span></div>
+      </div>
+      <div class="trust__item">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 6h22v15H15l-6 5v-5H5z"/><path d="M10 12h12M10 16h7"/></svg>
+        <div><b>Atención por WhatsApp</b><span>Te responde una persona, con tu lista ya ordenada.</span></div>
+      </div>
+      <div class="trust__item">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="9"/><path d="m21 21 7 7M10.5 14l2.5 2.5 4.5-5"/></svg>
+        <div><b>Te ayudamos a elegir</b><span>Sin código: envíanos el vehículo y la medida.</span></div>
+      </div>
     </div>
   </section>
 
@@ -109,7 +148,6 @@
   <section class="sec sec--cat" id="catalogo" aria-labelledby="catalogo-t">
     <div class="wrap">
       <div class="sec__head">
-        <p class="num">02</p>
         <div>
           <h2 id="catalogo-t" class="sec__t">Catálogo digital</h2>
           <p class="sec__lead">Busca por código, descripción, vehículo, marca o medida. Agrega los productos a tu lista y pide la cotización por WhatsApp.</p>
@@ -191,7 +229,6 @@
   <section class="sec sec--steps" id="cotizar" aria-labelledby="cot-t">
     <div class="wrap">
       <div class="sec__head">
-        <p class="num">03</p>
         <div>
           <h2 id="cot-t" class="sec__t">Cotiza en tres pasos</h2>
           <p class="sec__lead">Sin registros. Tu lista llega ordenada a nuestro WhatsApp, con número de cotización para darle seguimiento.</p>
@@ -220,46 +257,10 @@
     </div>
   </section>
 
-  <!-- POR QUÉ -->
-  <section class="why" id="por-que" aria-labelledby="why-t">
-    <div class="wrap">
-      <div class="sec__head sec__head--inv">
-        <p class="num">04</p>
-        <div>
-          <h2 id="why-t" class="sec__t">Por qué elegir BREAK PARTS</h2>
-          <p class="sec__lead">Trabajamos un solo tema, y lo trabajamos a fondo: el sistema que detiene tu vehículo.</p>
-        </div>
-      </div>
-      <div class="why__grid">
-        <article class="feat">
-          <svg class="feat__ic" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="6"/><path d="M30 7.8A17 17 0 0 1 40.2 18" stroke="#D71920" stroke-width="5"/></svg>
-          <h3>Especialistas en frenos y embragues</h3>
-          <p>Bombas, bombines, pistones, kits, pastillas, máster y servos. Todo nuestro catálogo gira alrededor de estos dos sistemas.</p>
-        </article>
-        <article class="feat">
-          <svg class="feat__ic" viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="7" width="14" height="14" rx="2"/><rect x="27" y="7" width="14" height="14" rx="2"/><rect x="7" y="27" width="14" height="14" rx="2"/><rect x="27" y="27" width="14" height="14" rx="2" stroke="#D71920"/></svg>
-          <h3>Amplio catálogo</h3>
-          <p><span data-stat="items">2,755</span> productos de <span data-stat="marcas">40</span> marcas, con código, medida y aplicación para buscar rápido.</p>
-        </article>
-        <article class="feat">
-          <svg class="feat__ic" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 11h30v20H22l-8 7v-7H9z"/><path d="M16 19h16M16 24h10" stroke="#D71920"/></svg>
-          <h3>Atención personalizada</h3>
-          <p>Te responde una persona por WhatsApp, con tu lista de productos ya ordenada.</p>
-        </article>
-        <article class="feat">
-          <svg class="feat__ic" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="17"/><circle cx="24" cy="24" r="9"/><circle cx="24" cy="24" r="2.5" fill="#D71920" stroke="#D71920"/><path d="M24 3v6M24 39v6M3 24h6M39 24h6"/></svg>
-          <h3>Te ayudamos a elegir</h3>
-          <p>¿No tienes el código? Envíanos el vehículo y la medida, y te orientamos hasta el repuesto adecuado.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
   <!-- CONTACTO -->
   <section class="sec" id="contacto" aria-labelledby="con-t">
     <div class="wrap">
       <div class="sec__head">
-        <p class="num">05</p>
         <div>
           <h2 id="con-t" class="sec__t">Contacto</h2>
           <p class="sec__lead">Escríbenos con el código, el vehículo o una foto del repuesto.</p>
@@ -291,7 +292,7 @@
           <div class="field"><label for="c-veh">Vehículo (opcional)</label><input id="c-veh" name="vehiculo" placeholder="Marca, modelo y año"></div>
           <div class="field"><label for="c-msg">Consulta</label><textarea id="c-msg" name="consulta" rows="4" required placeholder="¿Qué repuesto buscas?"></textarea></div>
           <p class="form__err" id="c-err" role="alert" hidden></p>
-          <button class="btn btn--red btn--block" type="submit">Enviar por WhatsApp</button>
+          <button class="btn btn--dark btn--block" type="submit">Enviar por WhatsApp</button>
           <p class="form__note">Al enviar se abre WhatsApp con tu mensaje listo para mandar.</p>
         </form>
       </div>
@@ -307,7 +308,7 @@
           <circle cx="24" cy="24" r="19" fill="none" stroke="currentColor" stroke-width="5"/>
           <circle cx="24" cy="24" r="6.5" fill="none" stroke="currentColor" stroke-width="3"/>
           <g fill="currentColor"><circle cx="24" cy="12.5" r="1.8"/><circle cx="34.9" cy="20.4" r="1.8"/><circle cx="30.8" cy="33.3" r="1.8"/><circle cx="17.2" cy="33.3" r="1.8"/><circle cx="13.1" cy="20.4" r="1.8"/></g>
-          <path d="M30.5 4.6 A20.5 20.5 0 0 1 43.6 18" fill="none" stroke="#D71920" stroke-width="7.5" stroke-linecap="round"/>
+          <path class="logo__arc" d="M30.5 4.6 A20.5 20.5 0 0 1 43.6 18" fill="none" stroke="#1E56D9" stroke-width="7.5" stroke-linecap="round"/>
         </svg>
         <span class="logo__word"><b>BREAK</b><span>PARTS</span></span>
       </a>
@@ -317,8 +318,7 @@
       <h4>Catálogo</h4>
       <a href="#catalogo">Ver todo el catálogo</a>
       <a href="#cotizar">Cómo cotizar</a>
-      <a href="#por-que">Por qué elegirnos</a>
-    </nav>
+          </nav>
     <nav class="foot__col" aria-label="Categorías" id="foot-cats">
       <h4>Categorías</h4>
     </nav>
@@ -466,7 +466,6 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/fix-catalogo.js" charset="utf-8"></script>
 <script src="assets/config.js" charset="utf-8"></script>
 <script charset="utf-8" src="assets/app.js" defer></script>
 <script charset="utf-8" src="assets/hero3d.js" defer></script>
