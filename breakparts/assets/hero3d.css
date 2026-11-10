@@ -1,0 +1,244 @@
+/* ==========================================================================
+   BREAK PARTS · Sistema 3D de piezas (hero)
+   Reemplaza el disco 3D. Sin dependencias: CSS 3D + assets/hero3d.js
+   ========================================================================== */
+
+/* El disco antiguo y sus tarjetas flotantes quedan fuera de la vista.
+   Se mantienen en el HTML solo para que el código viejo de app.js no falle. */
+.hero__stage > .hero__fallback,
+.hero__stage > #disc3d,
+.hero__stage > .float { display: none !important; }
+
+.orbit {
+  --o-red: #D71920;
+  --o-ink: #121417;
+  --o-mute: #5B6170;
+  --o-line: rgba(18, 20, 23, .12);
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 320px;
+  max-height: 640px;
+  margin-inline: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;               /* el gesto vertical sigue haciendo scroll */
+  cursor: grab;
+  outline: none;
+  isolation: isolate;
+}
+.orbit.is-drag { cursor: grabbing; }
+.orbit:focus-visible { box-shadow: 0 0 0 3px rgba(215, 25, 32, .35); border-radius: 24px; }
+
+/* Resplandor de fondo */
+.orbit::before {
+  content: "";
+  position: absolute;
+  inset: 12% 8% 18%;
+  background: radial-gradient(closest-side, rgba(215, 25, 32, .10), rgba(215, 25, 32, 0) 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.orbit__scene {
+  position: absolute;
+  inset: 0 0 64px;
+  perspective: var(--o-persp, 1400px);
+  perspective-origin: 50% 40%;
+}
+.orbit__world {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Pista de la órbita (en el plano del piso) */
+.orbit__track,
+.orbit__track--in {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.orbit__track {
+  width: calc(var(--o-r) * 2);
+  height: calc(var(--o-r) * 2);
+  margin: calc(var(--o-r) * -1) 0 0 calc(var(--o-r) * -1);
+  border: 1.5px dashed var(--o-line);
+  transform: translateY(var(--o-floor)) rotateX(90deg);
+}
+.orbit__track--in {
+  width: calc(var(--o-r) * 1.1);
+  height: calc(var(--o-r) * 1.1);
+  margin: calc(var(--o-r) * -.55) 0 0 calc(var(--o-r) * -.55);
+  border: 1px solid var(--o-line);
+  background: radial-gradient(closest-side, rgba(18, 20, 23, .06), rgba(18, 20, 23, 0));
+  transform: translateY(var(--o-floor)) rotateX(90deg);
+}
+
+/* Núcleo: logo al centro del sistema */
+.orbit__core {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--o-r) * .42);
+  height: calc(var(--o-r) * .42);
+  margin: calc(var(--o-r) * -.21) 0 0 calc(var(--o-r) * -.21);
+  color: var(--o-ink);
+  opacity: .9;
+  pointer-events: none;
+}
+.orbit__core svg { width: 100%; height: 100%; display: block; }
+
+/* Sombra de cada pieza sobre el piso */
+.orbit__shadow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--o-size);
+  height: var(--o-size);
+  margin: calc(var(--o-size) * -.5) 0 0 calc(var(--o-size) * -.5);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(18, 20, 23, .22), rgba(18, 20, 23, 0) 72%);
+  pointer-events: none;
+}
+.orbit__shadow.is-front {
+  background: radial-gradient(closest-side, rgba(215, 25, 32, .30), rgba(215, 25, 32, 0) 72%);
+}
+
+/* Piezas */
+.orbit__item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--o-size);
+  height: var(--o-size);
+  margin: calc(var(--o-size) * -.5) 0 0 calc(var(--o-size) * -.5);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: inherit;
+  -webkit-tap-highlight-color: transparent;
+  backface-visibility: hidden;
+}
+.orbit__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.orbit__item:focus-visible { outline: 2px solid var(--o-red); outline-offset: 4px; border-radius: 16px; }
+
+/* Panel inferior: nombre de la pieza al frente + controles */
+.orbit__hud {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+  cursor: default;
+}
+.orbit__btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--o-line);
+  background: #fff;
+  color: var(--o-ink);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: border-color .2s, background-color .2s, color .2s;
+}
+.orbit__btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.orbit__btn:hover { border-color: var(--o-ink); }
+.orbit__btn:focus-visible { outline: 2px solid var(--o-red); outline-offset: 2px; }
+
+.orbit__info { text-align: center; min-width: 0; }
+.orbit__count {
+  display: block;
+  font: 500 12px/1.2 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .06em;
+  color: var(--o-mute);
+}
+.orbit__name {
+  display: block;
+  margin-top: 2px;
+  font-weight: 700;
+  font-size: clamp(16px, 2.2vw, 20px);
+  line-height: 1.2;
+  color: var(--o-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.orbit__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  padding: 4px 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--o-red);
+  cursor: pointer;
+}
+.orbit__go svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
+.orbit__go:hover svg { transform: translateX(3px); }
+.orbit__go:focus-visible { outline: 2px solid var(--o-red); outline-offset: 2px; border-radius: 4px; }
+
+.orbit__hint {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font: 500 11px/1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--o-mute);
+  pointer-events: none;
+  transition: opacity .4s;
+}
+.orbit.is-touched .orbit__hint { opacity: 0; }
+
+.orbit__sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Imagen de producto que no cargó: se muestra un marcador limpio, no un ícono roto */
+img.bp-img-missing { object-fit: contain; background: #F3F4F6; }
+
+/* Aviso cuando la página se abre como archivo local y no hay respaldo de datos */
+.bp-aviso {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(215, 25, 32, .3);
+  border-radius: 12px;
+  background: #FFF5F5;
+  color: #121417;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.bp-aviso code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; }
+
+@media (max-width: 640px) {
+  .orbit { min-height: 300px; }
+  .orbit__hint { display: none; }
+}
