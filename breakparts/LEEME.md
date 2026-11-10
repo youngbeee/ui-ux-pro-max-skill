@@ -1,4 +1,4 @@
-# BREAK PARTS · Sitio web
+# FRENOS PARTS ESTOC · Sitio web
 
 Sitio estático: no necesita servidor ni base de datos. Se sube tal cual a cualquier hosting (Netlify, Vercel, Cloudflare Pages, Hostinger, cPanel…).
 

@@ -1,4 +1,4 @@
-/* BREAK PARTS · catálogo, cotización y experiencia de la página */
+/* FRENOS PARTS ESTOC · catálogo, cotización y experiencia de la página */
 (() => {
 "use strict";
 const C = window.BP_CONFIG;
@@ -88,7 +88,7 @@ function loadImg(img) {
 }
 function imgTag(it, cls = "") {
   // En modo archivos usamos src directo + loading="lazy"; en modo paquetes cargamos al acercarse
-  const alt = esc(`${it.desc} – ${it.cod}`);
+  const alt = esc(it.desc);
   if (IMG.sync) return `<img class="${cls}" src="${IMG.sync(it.slug)}" alt="${alt}" loading="lazy" decoding="async" width="320" height="320" onload="this.classList.add('ok')">`;
   return `<img class="${cls}" data-slug="${it.slug}" alt="${alt}" decoding="async" width="320" height="320" onload="this.classList.add('ok')">`;
 }
@@ -250,15 +250,14 @@ function card(it, k) {
     <button class="card__open" type="button" data-open="${it.slug}" aria-label="Ver ficha: ${esc(it.desc)}">
       <div class="card__media">${media}<span class="card__tag">${esc(famName(it.fam))}</span></div>
       <div class="card__body">
-        <span class="card__cod">${esc(it.cod)}</span>
         <h3 class="card__desc">${esc(it.desc)}</h3>
         <div class="card__meta">${meta}</div>
         <span class="card__price">Precio: <b>Consultar precio</b></span>
       </div>
     </button>
     <div class="card__foot">
-      <button class="card__add${inCart(it.slug) ? " added" : ""}" type="button" data-add="${it.slug}" aria-label="Agregar ${esc(it.cod)} a la cotización">${inCart(it.slug) ? `✓ ${cartQty(it.slug)} en lista` : "+ Agregar"}</button>
-      <a class="card__wa" href="${waLink(productMsg(it))}" target="_blank" rel="noopener" aria-label="Consultar ${esc(it.cod)} por WhatsApp">${WA_SVG}</a>
+      <button class="card__add${inCart(it.slug) ? " added" : ""}" type="button" data-add="${it.slug}" aria-label="Agregar a la cotización: ${esc(it.desc)}">${inCart(it.slug) ? `✓ ${cartQty(it.slug)} en lista` : "+ Agregar"}</button>
+      <a class="card__wa" href="${waLink(productMsg(it))}" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp: ${esc(it.desc)}">${WA_SVG}</a>
     </div>
   </article>`;
 }
@@ -278,7 +277,7 @@ function render(reset) {
   $("#res-n").innerHTML = n ? `<b>${fmt(n)}</b> ${n === 1 ? "producto" : "productos"}${st.q ? ` para «${esc(st.q)}»` : ""}` : "Sin resultados";
   $("#apply-n").textContent = fmt(n);
   $("#empty").hidden = n > 0;
-  $("#empty-wa").href = waLink(st.q ? `Hola, busco este repuesto en BREAK PARTS: ${st.q}. ¿Lo tienen disponible?` : "");
+  $("#empty-wa").href = waLink(st.q ? `Hola, busco este repuesto en FRENOS PARTS ESTOC: ${st.q}. ¿Lo tienen disponible?` : "");
   $("#load-more").hidden = shown >= n;
   $("#load-more").textContent = `Mostrar ${fmt(Math.min(PAGE(), n - shown))} productos más`;
   $("#more-info").textContent = n ? `Mostrando ${fmt(shown)} de ${fmt(n)}` : "";
@@ -317,14 +316,14 @@ function readURL() {
 let current = null;
 // Los mensajes de WhatsApp llevan solo el código del producto (sin descripción, marca ni medida)
 function productMsg(it) {
-  return `Hola, quisiera consultar el precio y la disponibilidad de este producto de BREAK PARTS:\n• Código: *${it.cod}*`;
+  return `Hola, quisiera consultar el precio y la disponibilidad de este producto de FRENOS PARTS ESTOC:\n• Código: *${it.cod}*`;
 }
 function openProduct(slug, push = true) {
   const it = BY_SLUG.get(slug); if (!it) return;
   current = it;
   const media = $("#p-media"); media.classList.remove("zoom");
   if (it.img) {
-    media.innerHTML = `<img data-slug="${it.slug}" data-kind="full" alt="${esc(it.desc)} – ${esc(it.cod)}" width="520" height="520">`;
+    media.innerHTML = `<img data-slug="${it.slug}" data-kind="full" alt="${esc(it.desc)}" width="520" height="520">`;
     loadImg($("img", media));
   } else media.innerHTML = noImg(it.fam, "Imagen no disponible");
   $("#p-cat").textContent = `${famName(it.fam)} · ${subName(it.sub)}`;
@@ -339,13 +338,13 @@ function openProduct(slug, push = true) {
   const rel = ITEMS.filter(o => o !== it && o.fam === it.fam && o.sub === it.sub && ((it.medida && o.medida === it.medida) || (!it.medida && o.marca === it.marca)))
     .sort((a, b) => b.img - a.img).slice(0, 8);
   $("#p-rel-wrap").hidden = !rel.length;
-  $("#p-rel").innerHTML = rel.map(o => `<button class="rel__item" type="button" data-open="${o.slug}"><div class="rel__img">${o.img ? imgTag(o) : noImg(o.fam, "")}</div><span class="mono">${esc(o.cod)}</span><span>${esc(o.desc)}</span></button>`).join("");
+  $("#p-rel").innerHTML = rel.map(o => `<button class="rel__item" type="button" data-open="${o.slug}"><div class="rel__img">${o.img ? imgTag(o) : noImg(o.fam, "")}</div><span>${esc(o.desc)}</span></button>`).join("");
   hydrate($("#p-rel"));
   const d = $("#product");
   if (!d.open) { d.showModal ? d.showModal() : d.setAttribute("open", ""); }
   d.scrollTop = 0;
   if (push && C.sincronizarURL) { try { const p = new URLSearchParams(location.search); p.set("producto", slug); history.pushState({ p: slug }, "", "?" + p); } catch {} }
-  document.title = `${it.cod} · ${it.desc} | BREAK PARTS`;
+  document.title = `${it.desc} | FRENOS PARTS ESTOC`;
 }
 function closeProduct(fromPop) {
   const d = $("#product"); if (!d.open) return;
@@ -372,7 +371,7 @@ $("#p-add").addEventListener("click", () => {
   if (!current) return;
   setQty(current.slug, Math.max(1, +$("#p-qty").value || 1));
   $("#p-add").textContent = "Actualizar cantidad";
-  toast(`${current.cod} agregado a tu cotización`);
+  toast("Producto agregado a tu cotización");
 });
 const BASE_TITLE = document.title;
 window.addEventListener("popstate", () => {
@@ -566,7 +565,7 @@ $("#apply-filters").addEventListener("click", () => { closeFilters(); goCatalog(
 
 document.addEventListener("click", e => {
   const add = e.target.closest("[data-add]");
-  if (add) { e.preventDefault(); const s = add.dataset.add; if (inCart(s)) { openQuote(); } else { setQty(s, 1); toast(`${BY_SLUG.get(s)?.cod} agregado a tu cotización`); } return; }
+  if (add) { e.preventDefault(); const s = add.dataset.add; if (inCart(s)) { openQuote(); } else { setQty(s, 1); toast("Producto agregado a tu cotización"); } return; }
   const op = e.target.closest("[data-open]");
   if (op) { openProduct(op.dataset.open); return; }
   const cp = e.target.closest("[data-copy]");
@@ -620,8 +619,8 @@ function buildContact() {
   const h = Array.isArray(C.horarios) ? C.horarios : [];
   $("#hours").innerHTML = h.length ? h.map(([d, t]) => `<li><span>${esc(d)}</span><span>${esc(t)}</span></li>`).join("") : `<li class="pending">Consulta nuestro horario por WhatsApp.</li>`;
   const map = $("#map");
-  if (C.mapaEmbed && /^https:\/\/www\.google\.com\/maps\/embed/.test(C.mapaEmbed)) {
-    map.innerHTML = `<iframe src="${esc(C.mapaEmbed)}" title="Ubicación de BREAK PARTS en Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+  if (C.mapaEmbed && /^https:\/\/www\.google\.com\/maps(\/embed|\?)/.test(C.mapaEmbed)) {
+    map.innerHTML = `<iframe src="${esc(C.mapaEmbed)}" title="Ubicación de FRENOS PARTS ESTOC en Google Maps" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
   } else {
     map.innerHTML = `<div class="map__ph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg><b>Mapa de ubicación</b><p>${addr ? esc(addr) : "Pronto publicaremos nuestra ubicación en el mapa."}</p></div>`;
   }
@@ -632,7 +631,7 @@ $("#contact-form").addEventListener("submit", e => {
   const n = $("#c-name").value.trim(), v = $("#c-veh").value.trim(), m = $("#c-msg").value.trim(), err = $("#c-err");
   if (!n || !m) { err.hidden = false; err.textContent = !n ? "Escribe tu nombre para poder atenderte." : "Cuéntanos qué repuesto buscas."; (!n ? $("#c-name") : $("#c-msg")).focus(); return; }
   err.hidden = true;
-  openWA(`Hola BREAK PARTS, soy ${n}.` + (v ? `\nVehículo: ${v}` : "") + `\n${m}`);
+  openWA(`Hola FRENOS PARTS ESTOC, soy ${n}.` + (v ? `\nVehículo: ${v}` : "") + `\n${m}`);
   toast("Abriendo WhatsApp con tu mensaje…");
 });
 

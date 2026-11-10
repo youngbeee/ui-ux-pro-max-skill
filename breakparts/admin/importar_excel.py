@@ -1,5 +1,5 @@
 """
-BREAK PARTS · Importar o actualizar el catálogo desde Excel
+FRENOS PARTS ESTOC · Importar o actualizar el catálogo desde Excel
 =============================================================
 
 Uso (desde la carpeta del sitio):

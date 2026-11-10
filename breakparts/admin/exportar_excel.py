@@ -1,5 +1,5 @@
 """
-BREAK PARTS · Exportar el catálogo actual a Excel (para editarlo)
+FRENOS PARTS ESTOC · Exportar el catálogo actual a Excel (para editarlo)
 Uso (desde la carpeta del sitio):  python3 admin/exportar_excel.py catalogo.xlsx
 Requisitos: pip install openpyxl
 """

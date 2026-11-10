@@ -1,5 +1,5 @@
 /* ==========================================================================
-   BREAK PARTS · Sistema 3D de piezas (hero)
+   FRENOS PARTS ESTOC · Sistema 3D de piezas (hero)
    - Las piezas orbitan alrededor del logo sobre una pista en perspectiva.
    - Arrastre / swipe para girar, flechas del teclado, botones anterior/siguiente.
    - Clic en la pieza del frente: busca esa familia en el catálogo.
@@ -43,11 +43,6 @@
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- DOM ---------- */
-  var LOGO = '<svg viewBox="0 0 48 48" aria-hidden="true">' +
-    '<circle cx="24" cy="24" r="19" fill="none" stroke="currentColor" stroke-width="5"/>' +
-    '<circle cx="24" cy="24" r="6.5" fill="none" stroke="currentColor" stroke-width="3"/>' +
-    '<g fill="currentColor"><circle cx="24" cy="12.5" r="1.8"/><circle cx="34.9" cy="20.4" r="1.8"/><circle cx="30.8" cy="33.3" r="1.8"/><circle cx="17.2" cy="33.3" r="1.8"/><circle cx="13.1" cy="20.4" r="1.8"/></g>' +
-    '<path d="M30.5 4.6 A20.5 20.5 0 0 1 43.6 18" fill="none" class="logo__arc" stroke="#1E56D9" stroke-width="7.5" stroke-linecap="round"/></svg>';
   var ARROW_L = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
   var ARROW_R = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   var ARROW_GO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
@@ -61,7 +56,7 @@
   root.innerHTML =
     '<div class="orbit__scene"><div class="orbit__world">' +
       '<div class="orbit__track"></div><div class="orbit__track--in"></div>' +
-      '<div class="orbit__core">' + LOGO + '</div>' +
+      '<div class="orbit__core" aria-hidden="true"><img src="assets/logo-fpe.webp" alt=""><img src="assets/logo-fpe.webp" alt=""></div>' +
     '</div></div>' +
     '<div class="orbit__hud">' +
       '<button class="orbit__btn" type="button" data-dir="-1" aria-label="Pieza anterior">' + ARROW_L + '</button>' +
@@ -163,7 +158,8 @@
   function render(now) {
     var t = (now - t0) / 1000;
     world.style.transform = 'rotateX(' + (-TILT - parY * 0.06) + 'rad) rotateY(' + (parX * 0.10) + 'rad)';
-    core.style.transform = 'rotateY(' + (-parX * 0.10) + 'rad) rotateX(' + (TILT + parY * 0.06) + 'rad) rotateZ(' + (reduce ? 0 : t * 12) + 'deg)';
+    // el logo flota sobre el centro y gira sobre su eje vertical; tiene dos caras para leerse siempre al derecho
+    core.style.transform = 'translateY(' + (-R * 0.5).toFixed(1) + 'px) rotateX(' + (TILT + parY * 0.06) + 'rad) rotateY(' + (reduce ? 0 : t * 40) + 'deg)';
 
     for (var i = 0; i < n; i++) {
       var a = angle + i * step;
