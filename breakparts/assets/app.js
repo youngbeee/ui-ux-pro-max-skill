@@ -38,7 +38,7 @@ const FAM = {
   BOMBIN: { n: "Bombines", d: "Bombines de rueda y de embrague auxiliar.", img: "46930-s7c-e01nbn" },
   PISTON: { n: "Pistones", d: "Pistones de cáliper y de bombín, por diámetro y altura.", img: "d025530" },
   KIT: { n: "Kits", d: "Kits de reparación de cáliper, tambor, bombas, servos y máster.", img: "hokc513" },
-  MASTER: { n: "Máster", d: "Máster de freno y embrague, cubos, retenes y jebes.", img: "44610-0k010ail" },
+  MASTER: { n: "Máster", d: "Máster de freno y embrague, cubos, retenes y jebes.", img: "44610-35860azb" },
   PASTILLA: { n: "Pastillas", d: "Pastillas de freno delanteras y posteriores.", pic: "assets/piezas/pastillas.webp" },
   SERVO: { n: "Servos", d: "Servos y cilindros de freno y embrague.", ill: "servo" }
 };
@@ -607,6 +607,13 @@ function buildBento() {
   $$("[data-bg]").forEach(el => bgImg(el, el.dataset.bg));
   $("#foot-cats").insertAdjacentHTML("beforeend", fams.map(f => `<a href="#catalogo" data-goto-fam="${esc(f)}">${esc(famName(f))}</a>`).join(""));
 }
+function buildFeatured() {
+  const el = $("#featured"); if (!el) return;
+  const picks = ["BOMBA", "MASTER", "BOMBIN", "PISTON"].map(f => BY_SLUG.get(FAM[f]?.img) || ITEMS.find(i => i.fam === f && i.img)).filter(it => it && it.img);
+  el.innerHTML = picks.map((it, k) => card(it, k)).join("");
+  hydrate(el);
+  el.closest("section").hidden = !picks.length;
+}
 function buildGauge() {
   const m = new Map(); ITEMS.forEach(i => i.medida && m.set(i.medida, (m.get(i.medida) || 0) + 1));
   const top = [...m.entries()].filter(([v]) => /^\d+(\s\d+\/\d+)?(\/\d+)?"?$/.test(v)).sort((a, b) => b[1] - a[1]).slice(0, 14).sort((a, b) => cmpMeasure(a[0], b[0]));
@@ -692,7 +699,7 @@ async function init() {
     $("#res-n").textContent = "No pudimos cargar el catálogo. Recarga la página o escríbenos por WhatsApp.";
     return;
   }
-  buildStats(); buildBento(); buildGauge();
+  buildStats(); buildBento(); buildGauge(); buildFeatured();
   const prod = readURL();
   if (st.q) { $("#q").value = st.q; $("#q-clear").hidden = false; }
   apply();

@@ -14,14 +14,16 @@
   // "ir" es el filtro del catálogo que se aplica al hacer clic (familia y subfamilia)
   var PIEZAS = [
     { id: 'bomba',     nombre: 'Bomba de freno',     ir: { fam: 'BOMBA', sub: 'FRENO' } },
-    { id: 'master',    nombre: 'Máster de freno',    ir: { fam: 'MASTER', sub: 'FRENO' } },   // foto del catálogo: 44610-0K010AIL
+    { id: 'master',    nombre: 'Máster de freno',    ir: { fam: 'MASTER', sub: 'FRENO' } },   // foto del catálogo: 44610-35860AZB
+    { id: 'embrague',  nombre: 'Bomba de embrague',  ir: { fam: 'BOMBA', sub: 'EMBRAGUE' } }, // foto del catálogo: 30610-01J60NBN
     { id: 'pastillas', nombre: 'Pastillas de freno', ir: { fam: 'PASTILLA' } },
     { id: 'bombin',    nombre: 'Bombín de rueda',    ir: { fam: 'BOMBIN', sub: 'RUEDA' } },
     { id: 'zapatas',   nombre: 'Kits de tambor',     ir: { fam: 'KIT', sub: 'TAMBOR' } }
   ];
 
   var TILT = 13 * Math.PI / 180;      // inclinación de la cámara (rad)
-  var DWELL = 3200;                   // ms que cada pieza se queda al frente en reproducción automática
+  var DWELL = 3200;                   // ms de espera antes de volver a girar solo
+  var GIRO = 0.085;                   // rad/s: una vuelta completa cada 74 s aprox.
   var IDLE_AFTER_USER = 7000;         // ms sin tocar antes de volver a girar solo
   var TAU = Math.PI * 2;
 
@@ -56,7 +58,7 @@
   root.innerHTML =
     '<div class="orbit__scene"><div class="orbit__world">' +
       '<div class="orbit__track"></div><div class="orbit__track--in"></div>' +
-      '<div class="orbit__core" aria-hidden="true"><img src="assets/logo-fpe.webp" alt=""><img src="assets/logo-fpe.webp" alt=""></div>' +
+      '<div class="orbit__core" aria-hidden="true"><img src="assets/logo-fpe.webp" alt=""></div>' +
     '</div></div>' +
     '<div class="orbit__hud">' +
       '<button class="orbit__btn" type="button" data-dir="-1" aria-label="Pieza anterior">' + ARROW_L + '</button>' +
@@ -108,7 +110,7 @@
     var w = scene.clientWidth, h = scene.clientHeight;
     if (!w || !h) return;
     R = Math.min(w * 0.34, h * 0.40);
-    SIZE = R * 0.98;
+    SIZE = R * 0.88;
     root.style.setProperty('--o-r', R + 'px');
     root.style.setProperty('--o-size', SIZE + 'px');
     root.style.setProperty('--o-floor', (SIZE * 0.46) + 'px');
@@ -158,8 +160,8 @@
   function render(now) {
     var t = (now - t0) / 1000;
     world.style.transform = 'rotateX(' + (-TILT - parY * 0.06) + 'rad) rotateY(' + (parX * 0.10) + 'rad)';
-    // el logo flota sobre el centro y gira sobre su eje vertical; tiene dos caras para leerse siempre al derecho
-    core.style.transform = 'translateY(' + (-R * 0.5).toFixed(1) + 'px) rotateX(' + (TILT + parY * 0.06) + 'rad) rotateY(' + (reduce ? 0 : t * 40) + 'deg)';
+    // el logo queda fijo, de frente, sobre el centro; las piezas giran a su alrededor
+    core.style.transform = 'translateY(' + (-R * 0.5).toFixed(1) + 'px) rotateX(' + (TILT + parY * 0.06) + 'rad)';
 
     for (var i = 0; i < n; i++) {
       var a = angle + i * step;
@@ -214,8 +216,7 @@
         if (Math.abs(d) < 0.0008) { angle = target; target = null; }
         moving = true;
       } else if (!reduce && !hover && !focused && visible && now >= nextAuto) {
-        goTo(frontIndex(angle) + 1, false);
-        nextAuto = now + DWELL;
+        angle -= GIRO * dt;                 // giro continuo y lento
         moving = true;
       }
     }
