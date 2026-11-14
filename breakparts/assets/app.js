@@ -319,15 +319,15 @@ function productMsg(it) {
   return `Hola, quisiera consultar el precio y la disponibilidad de este producto de FRENOS PARTS ESTOC:\n• Código: *${it.cod}*`;
 }
 // Destacados del estante: [producto, nombre corto, vehículo y medida]. Cada uno tiene su recorte en assets/estante/
-const SHELF = [
+const SHELF = [   // ocho tipos de repuesto distintos, sin repetir
   ["44610-35860azb", "Máster de freno", "Toyota Hilux · 9\""],
-  ["30610-01j60nbn", "Bomba de embrague", "Nissan Patrol · 5/8"],
   ["mc-894212cad", "Bomba de freno", "Mitsubishi · 1 1/4"],
-  ["ho207", "Pistón de cáliper", "Nissan Stanza"],
-  ["46010-0t301bgf", "Bomba de freno", "Nissan Atlas · 1 1/8"],
+  ["30610-01j60nbn", "Bomba de embrague", "Nissan Patrol · 5/8"],
+  ["58320-4b001nbn", "Bombín de rueda", "Hyundai H100 · 11/16"],
   ["31470-28040nbn", "Bombín de embrague", "Toyota Hiace · 13/16"],
-  ["mr-374859cad", "Bomba de embrague", "Mitsubishi L200 · 3/4"],
-  ["ub39-41-920nbn", "Bombín de embrague", "Mazda · 3/4"]
+  ["ho207", "Pistón de cáliper", "Nissan Stanza"],
+  ["hokc905", "Kit de cáliper", "Kia Sportage"],
+  ["hokt603r", "Kit de tambor", "Toyota Corolla"]
 ];
 const CUTS = new Set(SHELF.map(s => s[0]));
 const noMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
