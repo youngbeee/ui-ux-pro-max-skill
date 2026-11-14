@@ -318,16 +318,42 @@ let current = null;
 function productMsg(it) {
   return `Hola, quisiera consultar el precio y la disponibilidad de este producto de FRENOS PARTS ESTOC:\n• Código: *${it.cod}*`;
 }
-function openProduct(slug, push = true) {
+// Destacados del estante: [producto, nombre corto, vehículo y medida]. Cada uno tiene su recorte en assets/estante/
+const SHELF = [
+  ["44610-35860azb", "Máster de freno", "Toyota Hilux · 9\""],
+  ["30610-01j60nbn", "Bomba de embrague", "Nissan Patrol · 5/8"],
+  ["mc-894212cad", "Bomba de freno", "Mitsubishi · 1 1/4"],
+  ["ho207", "Pistón de cáliper", "Nissan Stanza"],
+  ["46010-0t301bgf", "Bomba de freno", "Nissan Atlas · 1 1/8"],
+  ["31470-28040nbn", "Bombín de embrague", "Toyota Hiace · 13/16"],
+  ["mr-374859cad", "Bomba de embrague", "Mitsubishi L200 · 3/4"],
+  ["ub39-41-920nbn", "Bombín de embrague", "Mazda · 3/4"]
+];
+const CUTS = new Set(SHELF.map(s => s[0]));
+const noMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+let ppFrom = null; // el elemento del que salió la pieza: se oculta mientras la página está abierta
+const ppRelease = () => { if (ppFrom) { ppFrom.style.visibility = ""; ppFrom = null; } };
+// de dónde a dónde viaja la pieza: se alinean las bases, como si se la moviera de una repisa a otra
+function flight(from, media) {
+  const s = from.getBoundingClientRect(), t = media.getBoundingClientRect();
+  if (!s.width || !t.height || s.bottom < 0 || s.top > innerHeight) return null;
+  return `translate(${(s.left + s.width / 2 - (t.left + t.width / 2)).toFixed(1)}px,${(s.bottom - t.bottom).toFixed(1)}px) scale(${(s.height / t.height).toFixed(4)})`;
+}
+function openProduct(slug, push = true, from = null) {
   const it = BY_SLUG.get(slug); if (!it) return;
   current = it;
-  const media = $("#p-media"); media.classList.remove("zoom");
-  if (it.img) {
-    media.innerHTML = `<img data-slug="${it.slug}" data-kind="full" alt="${esc(it.desc)}" width="520" height="520">`;
-    loadImg($("img", media));
+  const media = $("#p-media");
+  if (CUTS.has(slug)) media.innerHTML = `<img class="pp-cut" src="assets/estante/${slug}.webp" alt="${esc(it.desc)}" draggable="false">`;
+  else if (it.img) {
+    media.innerHTML = `<img class="pp-photo" data-slug="${it.slug}" alt="${esc(it.desc)}" draggable="false">`;
+    const im = $("img", media);
+    if (from && from.tagName === "IMG" && from.currentSrc) im.src = from.currentSrc; // la miniatura ya cargada, mientras llega la foto grande
+    IMG.full(it.slug).then(src => { const big = new Image(); big.onload = () => { if (current === it && im.isConnected) im.src = src; }; big.onerror = () => { if (!im.getAttribute("src")) im.src = src; }; big.src = src; }).catch(() => {});
   } else media.innerHTML = noImg(it.fam, "Imagen no disponible");
   $("#p-cat").textContent = `${famName(it.fam)} · ${subName(it.sub)}`;
   $("#p-desc").textContent = it.desc;
+  $("#p-tag").textContent = [it.marca, it.medida].filter(Boolean).join(" · ");
+  $("#p-tag").hidden = !it.marca && !it.medida;
   $("#p-cod").textContent = it.cod;
   $("#p-specs").innerHTML = [["Marca", it.marca], ["Medida", it.medida], ["Familia", famName(it.fam)], ["Subfamilia", subName(it.sub)]]
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v || "—")}</dd></div>`).join("");
@@ -340,29 +366,58 @@ function openProduct(slug, push = true) {
   $("#p-rel-wrap").hidden = !rel.length;
   $("#p-rel").innerHTML = rel.map(o => `<button class="rel__item" type="button" data-open="${o.slug}"><div class="rel__img">${o.img ? imgTag(o) : noImg(o.fam, "")}</div><span>${esc(o.desc)}</span></button>`).join("");
   hydrate($("#p-rel"));
-  const d = $("#product");
-  if (!d.open) { d.showModal ? d.showModal() : d.setAttribute("open", ""); }
+  const d = $("#product"), wasOpen = d.open;
+  if (!wasOpen) { d.showModal ? d.showModal() : d.setAttribute("open", ""); }
   d.scrollTop = 0;
+  if (wasOpen) ppRelease(); // se abrió otro producto desde «relacionados»: ya no vuelve al lugar del primero
+  else if (!noMotion() && from && from.isConnected) {
+    const fl = flight(from, media);
+    if (fl) {
+      ppFrom = from; from.style.visibility = "hidden";
+      media.animate([{ transform: fl }, { transform: "none" }], { duration: 560, easing: "cubic-bezier(.22,1,.36,1)" });
+      media.firstElementChild?.animate([{ transform: "rotateY(-34deg)" }, { transform: "rotateY(0deg)" }], { duration: 950, easing: "cubic-bezier(.25,.1,.25,1)" });
+    }
+  }
   if (push && C.sincronizarURL) { try { const p = new URLSearchParams(location.search); p.set("producto", slug); history.pushState({ p: slug }, "", "?" + p); } catch {} }
   document.title = `${it.desc} | FRENOS PARTS ESTOC`;
 }
 function closeProduct(fromPop) {
-  const d = $("#product"); if (!d.open) return;
-  d.close ? d.close() : d.removeAttribute("open");
+  const d = $("#product"); if (!d.open || d.classList.contains("closing")) return;
+  const end = () => { d.classList.remove("closing"); ppRelease(); d.close ? d.close() : d.removeAttribute("open"); };
+  const media = $("#p-media"), fl = !noMotion() && ppFrom && ppFrom.isConnected ? flight(ppFrom, media) : null;
+  if (!fl) { end(); return; }
+  // la pieza vuelve al mismo lugar del que salió
+  d.classList.add("closing");
+  const an = media.animate([{ transform: "none" }, { transform: fl }], { duration: 430, easing: "cubic-bezier(.4,0,.2,1)", fill: "forwards" });
+  an.onfinish = an.oncancel = () => { an.onfinish = an.oncancel = null; an.cancel(); end(); };
 }
+$("#product").addEventListener("cancel", e => { e.preventDefault(); closeProduct(); });
 $("#product").addEventListener("close", () => {
+  ppRelease();
   document.title = BASE_TITLE;
   if (C.sincronizarURL) { try { const p = new URLSearchParams(location.search); if (p.has("producto")) { p.delete("producto"); history.replaceState(null, "", location.pathname + (p.toString() ? "?" + p : "")); } } catch {} }
 });
-$("#product").addEventListener("click", e => {
-  if (e.target === e.currentTarget || e.target.closest("[data-close]")) closeProduct();
-});
-$("#p-media").addEventListener("click", e => { if ($("img", e.currentTarget)) e.currentTarget.classList.toggle("zoom"); });
-$("#p-media").addEventListener("pointermove", e => {
-  const m = e.currentTarget; if (!m.classList.contains("zoom")) return;
-  const r = m.getBoundingClientRect(), img = $("img", m);
-  img.style.transformOrigin = `${(e.clientX - r.left) / r.width * 100}% ${(e.clientY - r.top) / r.height * 100}%`;
-});
+$("#product").addEventListener("click", e => { if (e.target.closest("[data-close]")) closeProduct(); });
+// Arrastrar para girar la pieza: sigue al dedo y al soltar vuelve de frente
+(() => {
+  const m = $("#p-media"); let g = null;
+  m.addEventListener("pointerdown", e => {
+    const el = m.firstElementChild; if (!el || noMotion()) return;
+    try { m.setPointerCapture(e.pointerId); } catch {}
+    el.getAnimations().forEach(x => x.cancel());
+    g = { x: e.clientX, el, r: 0 };
+  });
+  m.addEventListener("pointermove", e => {
+    if (!g) return;
+    g.r = Math.max(-72, Math.min(72, (e.clientX - g.x) / 2.2));
+    g.el.style.transform = `rotateY(${g.r.toFixed(1)}deg)`;
+  });
+  const up = () => {
+    if (!g) return; const { el, r } = g; g = null; el.style.transform = "";
+    el.animate([{ transform: `rotateY(${r}deg)` }, { transform: `rotateY(${(-r * 0.16).toFixed(1)}deg)`, offset: 0.55 }, { transform: "rotateY(0deg)" }], { duration: 720, easing: "cubic-bezier(.22,1,.36,1)" });
+  };
+  m.addEventListener("pointerup", up); m.addEventListener("pointercancel", up);
+})();
 $("#p-copy").addEventListener("click", e => current && copyText(current.cod, e.currentTarget));
 $$(".qty [data-q]", $("#product")).forEach(b => b.addEventListener("click", () => {
   const i = $("#p-qty"); i.value = Math.max(1, Math.min(999, (+i.value || 1) + +b.dataset.q));
@@ -567,7 +622,7 @@ document.addEventListener("click", e => {
   const add = e.target.closest("[data-add]");
   if (add) { e.preventDefault(); const s = add.dataset.add; if (inCart(s)) { openQuote(); } else { setQty(s, 1); toast("Producto agregado a tu cotización"); } return; }
   const op = e.target.closest("[data-open]");
-  if (op) { openProduct(op.dataset.open); return; }
+  if (op) { openProduct(op.dataset.open, true, op.querySelector("img")); return; }
   const cp = e.target.closest("[data-copy]");
   if (cp) copyText(cp.dataset.copy, cp);
   const g = e.target.closest("[data-goto-fam]");
@@ -609,11 +664,21 @@ function buildBento() {
 }
 function buildFeatured() {
   const el = $("#featured"); if (!el) return;
-  const picks = ["BOMBA", "MASTER", "BOMBIN", "PISTON"].map(f => BY_SLUG.get(FAM[f]?.img) || ITEMS.find(i => i.fam === f && i.img)).filter(it => it && it.img);
-  el.innerHTML = picks.map((it, k) => card(it, k)).join("");
-  hydrate(el);
+  const picks = SHELF.map(([s, n, v]) => [BY_SLUG.get(s), n, v]).filter(x => x[0]);
+  const per = matchMedia("(max-width: 639px)").matches ? 2 : 4; // en el celular, dos piezas por repisa
+  let html = "";
+  for (let k = 0; k < picks.length; k += per) {
+    const row = picks.slice(k, k + per);
+    html += `<div class="shelf" style="--n:${per}">
+      <div class="shelf__row">${row.map(([it, n, v]) => `<button class="shelf__item" type="button" data-open="${it.slug}" aria-label="${esc(n)}, ${esc(v)}"><img src="assets/estante/${it.slug}.webp" alt="" loading="lazy" decoding="async" draggable="false"></button>`).join("")}</div>
+      <div class="shelf__board" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="shelf__labels">${row.map(([, n, v]) => `<div><b>${esc(n)}</b><span>${esc(v)}</span></div>`).join("")}</div>
+    </div>`;
+  }
+  el.innerHTML = html;
   el.closest("section").hidden = !picks.length;
 }
+matchMedia("(max-width: 639px)").addEventListener?.("change", () => { if (ITEMS.length) buildFeatured(); });
 function buildGauge() {
   const m = new Map(); ITEMS.forEach(i => i.medida && m.set(i.medida, (m.get(i.medida) || 0) + 1));
   const top = [...m.entries()].filter(([v]) => /^\d+(\s\d+\/\d+)?(\/\d+)?"?$/.test(v)).sort((a, b) => b[1] - a[1]).slice(0, 14).sort((a, b) => cmpMeasure(a[0], b[0]));

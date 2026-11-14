@@ -145,7 +145,7 @@
         <h2 id="best-t" class="best__t">Destacados del catálogo</h2>
         <a class="best__all" href="#catalogo">Ver todo el catálogo</a>
       </div>
-      <div class="grid grid--4" id="featured"></div>
+      <div id="featured"></div>
     </div>
   </section>
 
@@ -344,22 +344,44 @@
 </button>
 
 <!-- Ficha de producto -->
-<dialog class="modal" id="product" aria-labelledby="p-desc">
-  <div class="modal__in">
-    <button class="x x--modal" type="button" data-close aria-label="Cerrar ficha">×</button>
-    <div class="pd">
-      <div class="pd__media" id="p-media"></div>
-      <div class="pd__info">
-        <p class="pd__cat" id="p-cat"></p>
-        <h2 class="pd__desc" id="p-desc"></h2>
-        <div class="pd__code" hidden><span class="lbl">Código</span><span class="mono" id="p-cod"></span><button class="copy" type="button" id="p-copy">Copiar</button></div>
-        <dl class="pd__specs" id="p-specs"></dl>
-        <div class="pd__price"><span class="lbl">Precio</span><b>Consultar precio</b></div>
-        <div class="pd__buy" id="p-buy">
-          <div class="qty" aria-label="Cantidad"><button type="button" data-q="-1" aria-label="Menos">−</button><input id="p-qty" type="number" min="1" max="999" value="1" inputmode="numeric" aria-label="Cantidad"><button type="button" data-q="1" aria-label="Más">+</button></div>
-          <button class="btn btn--dark" id="p-add" type="button">Agregar a cotización</button>
-        </div>
-        <a class="btn btn--wa btn--block" id="p-wa" href="https://wa.me/51981232672" target="_blank" rel="noopener">Consultar este producto por WhatsApp</a>
+<dialog class="ppage" id="product" aria-labelledby="p-desc">
+  <div class="ppage__bg" aria-hidden="true"></div>
+  <div class="ppage__in">
+    <button class="ppage__back" type="button" data-close>
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Volver al catálogo</button>
+    <div class="ppage__stage">
+      <div class="ppage__media" id="p-media"></div>
+      <div class="ppage__shelf" aria-hidden="true"></div>
+      <p class="ppage__hint">Arrastra la pieza para girarla</p>
+    </div>
+    <div class="ppage__info">
+      <p class="pd__cat" id="p-cat"></p>
+      <h2 class="pd__desc" id="p-desc"></h2>
+      <p class="ppage__tag" id="p-tag"></p>
+      <div class="pd__code" hidden><span class="lbl">Código</span><span class="mono" id="p-cod"></span><button class="copy" type="button" id="p-copy">Copiar</button></div>
+      <div class="ppage__price"><b>Consultar precio</b><span>Te respondemos por WhatsApp con precio, stock y plazo.</span></div>
+      <div class="pd__buy" id="p-buy">
+        <div class="qty" aria-label="Cantidad"><button type="button" data-q="-1" aria-label="Menos">−</button><input id="p-qty" type="number" min="1" max="999" value="1" inputmode="numeric" aria-label="Cantidad"><button type="button" data-q="1" aria-label="Más">+</button></div>
+        <button class="btn btn--dark" id="p-add" type="button">Agregar a cotización</button>
+      </div>
+      <a class="btn btn--wa btn--block" id="p-wa" href="https://wa.me/51981232672" target="_blank" rel="noopener">Consultar este producto por WhatsApp</a>
+      <dl class="ppage__dl">
+        <div><dt>Recojo:</dt><dd>Jr. Antonio Raimondi 450, La Victoria</dd></div>
+        <div><dt>Envío:</dt><dd>Lo coordinamos contigo por WhatsApp</dd></div>
+      </dl>
+      <div class="acc">
+        <details name="p-acc" open>
+          <summary>Detalles<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <dl class="pd__specs" id="p-specs"></dl>
+        </details>
+        <details name="p-acc">
+          <summary>Cómo cotizar<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>Elige la cantidad y pulsa «Agregar a cotización». Cuando tengas tu lista completa, ábrela con el botón «Cotización», completa tus datos y envíala por WhatsApp.</p>
+        </details>
+        <details name="p-acc">
+          <summary>¿No es el que buscas?<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <p>Escríbenos con el vehículo, el año y la medida, o envíanos una foto del repuesto. Te ayudamos a encontrar el adecuado.</p>
+        </details>
       </div>
     </div>
     <div class="rel" id="p-rel-wrap" hidden>

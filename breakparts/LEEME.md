@@ -81,3 +81,13 @@ Las piezas del 3D están en `assets/piezas/`. Para cambiar nombres o a qué fami
 ## Mensajes de WhatsApp
 
 La cotización y la consulta de un producto envían **solo el código** y la cantidad, sin descripción, marca ni medida. Lo que se escribe a mano en «¿No lo encuentras en el catálogo?» se envía como texto, porque no tiene código.
+
+## Estante de destacados y página de producto
+
+La sección «Destacados del catálogo» muestra 8 repuestos de pie sobre dos repisas. Al tocar uno, la pieza viaja hasta la página del producto; al volver, regresa a su lugar. Lo mismo pasa con cualquier tarjeta del catálogo.
+
+- Los 8 destacados están en la lista `SHELF`, dentro de `assets/app.js`: producto, nombre corto y vehículo.
+- Cada destacado necesita su foto recortada (fondo transparente) en `assets/estante/`, con el mismo nombre que la foto del catálogo.
+- En la página del producto, la pieza se puede arrastrar para girarla. Es un giro de la foto, no un modelo 3D.
+
+Esta parte adapta a HTML, CSS y JavaScript el componente «Product Shelf» de Aakash Mehra (aakashmehra.com), que está hecho en React. La página no usa React para que siga abriéndose con doble clic y se pueda subir a cualquier hosting sin compilar.
