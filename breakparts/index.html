@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="preload" href="assets/logo-fpe.webp" as="image">
 <link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/admin.css">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "AutoPartsStore", "name": "FRENOS PARTS ESTOC", "description": "Repuestos para frenos y embragues: bombas, bombines, pistones, kits, pastillas, máster y servos. Catálogo digital con más de 2,700 productos y cotización por WhatsApp.", "telephone": "+51981232672", "url": "https://www.breakparts.pe/", "address": {"@type": "PostalAddress", "streetAddress": "Jr. Antonio Raimondi 450", "addressLocality": "La Victoria", "addressRegion": "Lima", "addressCountry": "PE"}, "contactPoint": {"@type": "ContactPoint", "telephone": "+51981232672", "contactType": "sales", "availableLanguage": "es"}}</script>
 </head>
 <body>
@@ -329,7 +330,7 @@
     </div>
   </div>
   <div class="wrap foot__legal">
-    <p>© <span id="year">2026</span> FRENOS PARTS ESTOC. Todos los derechos reservados.</p>
+    <p>© <span id="year">2026</span> FRENOS PARTS ESTOC. Todos los derechos reservados. <button class="foot__adm" type="button" id="open-admin">Administrar</button></p>
     <p>Precios a consultar. Imágenes referenciales del producto.</p>
   </div>
 </footer>
@@ -485,10 +486,142 @@
   </a>
 </nav>
 
+<!-- Panel de administración: productos desde Excel, fotos, descarga del sitio en un solo HTML y contraseña (assets/admin.js) -->
+<dialog class="adm" id="adm" aria-label="Panel de administración">
+  <div class="adm-head">
+    <img class="adm-logo" src="assets/logo-fpe.webp" alt="" width="100" height="40">
+    <h2>Panel de administración</h2>
+    <span class="adm-mode" id="adm-mode"></span>
+    <button class="adm-x" type="button" id="adm-close" aria-label="Cerrar panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+
+  <div class="adm-login" id="adm-login">
+    <span class="adm-lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+    <h3>Acceso al panel</h3>
+    <p>Ingresa la contraseña para administrar los productos, las fotos y descargar la página.</p>
+    <form id="adm-login-form">
+      <input type="password" id="adm-pass" placeholder="Contraseña" autocomplete="current-password" aria-label="Contraseña" required>
+      <button class="btn btn--brand" type="submit">Ingresar</button>
+    </form>
+    <p class="adm-err" id="adm-err" role="alert"></p>
+  </div>
+
+  <div class="adm-body" id="adm-body" hidden>
+    <nav class="adm-tabs" role="tablist" aria-label="Secciones del panel">
+      <button class="adm-tab" type="button" role="tab" data-tab="datos" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 9h16M4 14h16M10 4v16"/></svg><span>Productos (Excel)</span></button>
+      <button class="adm-tab" type="button" role="tab" data-tab="fotos" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 8"/></svg><span>Fotos</span></button>
+      <button class="adm-tab" type="button" role="tab" data-tab="html" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg><span>Descargar HTML</span></button>
+      <button class="adm-tab" type="button" role="tab" data-tab="clave" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Contraseña</span></button>
+    </nav>
+    <div class="adm-main">
+      <div class="adm-top">
+        <div class="adm-kpis" id="adm-kpis" aria-live="polite"></div>
+        <div class="adm-dirty" id="adm-dirty" hidden><span>Tienes cambios que todavía no están guardados en un archivo. Descarga el HTML para conservarlos.</span><button type="button" data-go="html">Ir a «Descargar HTML»</button></div>
+      </div>
+
+      <section class="adm-pane" data-pane="datos" role="tabpanel">
+        <h3>Productos desde Excel</h3>
+        <div class="adm-card">
+          <p>La primera fila del Excel debe tener los nombres de las columnas (el orden no importa):</p>
+          <div class="adm-cols"><code>Código</code><code>Descripción</code><code>Marca</code><code>Medida</code><code>Familia</code><code>Subfamilia</code></div>
+          <label class="adm-drop" id="xl-drop">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="M4 9h16M4 14h16M10 4v16"/></svg>
+            <strong>Arrastra aquí tu Excel o haz clic para elegirlo</strong>
+            <span>.xlsx, .xls o .csv</span>
+            <input type="file" id="xl-file" accept=".xlsx,.xls,.csv,.txt">
+          </label>
+          <div class="adm-row">
+            <button class="btn btn--line" type="button" id="xl-tpl">Descargar plantilla</button>
+            <button class="btn btn--line" type="button" id="xl-cur">Descargar Excel con los productos actuales</button>
+          </div>
+        </div>
+        <div class="adm-card" id="xl-prev" hidden>
+          <h4 id="xl-name">Vista previa</h4>
+          <div class="adm-sum" id="xl-sum"></div>
+          <div class="adm-table" id="xl-table"></div>
+          <div class="adm-opts">
+            <label class="adm-opt"><input type="radio" name="xl-mode" value="merge" checked><span><b>Combinar con el catálogo actual</b><small>Agrega los productos nuevos y actualiza los que ya existen. No borra nada.</small></span></label>
+            <label class="adm-opt"><input type="radio" name="xl-mode" value="replace"><span><b>Reemplazar todo el catálogo</b><small>El catálogo queda exactamente como el Excel. Los productos que no estén en el Excel se quitan.</small></span></label>
+          </div>
+          <div class="adm-row">
+            <button class="btn btn--brand" type="button" id="xl-apply">Aplicar cambios</button>
+            <button class="btn btn--line" type="button" id="xl-cancel">Cancelar</button>
+          </div>
+        </div>
+        <div class="adm-card" id="json-card" hidden>
+          <h4>Para tu hosting</h4>
+          <p class="adm-note">Si la página está publicada con sus carpetas en un hosting, descarga estos dos archivos y reemplázalos en la carpeta <code>data/</code>.</p>
+          <div class="adm-row"><button class="btn btn--line" type="button" id="json-dl">Descargar productos.json y productos.js</button></div>
+        </div>
+      </section>
+
+      <section class="adm-pane" data-pane="fotos" role="tabpanel" hidden>
+        <h3>Fotos de productos</h3>
+        <div class="adm-card">
+          <p>Nombra cada foto con el <b>código del producto</b>, por ejemplo <code>30610-01J60NBN.jpg</code>. Se ajustan solas al tamaño de la página. Una foto nueva reemplaza a la anterior.</p>
+          <label class="adm-drop" id="img-drop">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 8"/></svg>
+            <strong>Arrastra aquí las fotos o una carpeta</strong>
+            <span>o haz clic para elegirlas · .jpg, .png o .webp</span>
+            <input type="file" id="img-files" accept="image/*" multiple>
+          </label>
+          <div class="adm-row">
+            <button class="btn btn--line" type="button" id="img-dir-btn">Elegir una carpeta completa</button>
+            <input type="file" id="img-dir" webkitdirectory multiple hidden>
+          </div>
+          <div class="adm-bar" id="img-bar" hidden><i></i></div>
+          <div class="adm-sum" id="img-sum"></div>
+          <div class="adm-log" id="img-log"></div>
+        </div>
+      </section>
+
+      <section class="adm-pane" data-pane="html" role="tabpanel" hidden>
+        <h3>Descargar la página en un solo archivo HTML</h3>
+        <div class="adm-card">
+          <ol class="adm-steps">
+            <li>Carga el Excel y las fotos en las otras pestañas.</li>
+            <li>Pulsa «Generar y descargar HTML».</li>
+            <li>Guarda el archivo: se abre con doble clic, funciona sin internet y lleva este mismo panel adentro.</li>
+          </ol>
+          <div class="adm-opts" id="html-q">
+            <h4>Calidad de las fotos</h4>
+            <label class="adm-opt"><input type="radio" name="html-q" value="t" checked><span><b>Normal</b><small>Fotos de 320 px. Archivo más liviano, ideal para enviar por WhatsApp o correo.</small></span></label>
+            <label class="adm-opt"><input type="radio" name="html-q" value="p"><span><b>Alta</b><small>Fotos de 520 px. Se ven más nítidas en la ficha del producto; el archivo pesa más.</small></span></label>
+            <label class="adm-opt"><input type="radio" name="html-q" value="0"><span><b>Sin fotos del catálogo</b><small>Solo incluye las fotos que subiste en este panel. Es el archivo más liviano.</small></span></label>
+          </div>
+          <div class="adm-row"><button class="btn btn--brand" type="button" id="html-go">Generar y descargar HTML</button></div>
+          <div class="adm-bar" id="html-bar" hidden><i></i></div>
+          <p class="adm-msg" id="html-msg" role="status"></p>
+        </div>
+      </section>
+
+      <section class="adm-pane" data-pane="clave" role="tabpanel" hidden>
+        <h3>Cambiar contraseña</h3>
+        <div class="adm-card">
+          <form class="adm-form" id="pw-form">
+            <div class="field"><label for="pw-old">Contraseña actual</label><input type="password" id="pw-old" autocomplete="current-password" required></div>
+            <div class="field"><label for="pw-new">Nueva contraseña</label><input type="password" id="pw-new" autocomplete="new-password" minlength="6" required></div>
+            <div class="field"><label for="pw-rep">Repite la nueva contraseña</label><input type="password" id="pw-rep" autocomplete="new-password" minlength="6" required></div>
+            <div class="adm-row"><button class="btn btn--brand" type="submit">Guardar contraseña</button></div>
+            <p class="adm-msg" id="pw-msg" role="status"></p>
+          </form>
+          <p class="adm-note">La nueva contraseña queda guardada en el HTML que descargues desde la pestaña «Descargar HTML».</p>
+        </div>
+        <div class="adm-row"><button class="btn btn--line" type="button" id="adm-logout">Cerrar sesión</button></div>
+      </section>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- Contraseña del panel: solo su huella SHA-256 (se cambia desde el panel, pestaña «Contraseña») -->
+<script id="bp-admin">window.BP_ADMIN = { hash: "2848b28f32fddb7fa4c9d72c236ed38107a9bb5d6ec1ed5c562f1c2059130ddf" };</script>
 <script src="assets/config.js" charset="utf-8"></script>
 <script charset="utf-8" src="assets/app.js" defer></script>
 <script charset="utf-8" src="assets/hero3d.js" defer></script>
+<script charset="utf-8" src="assets/admin.js" defer></script>
+<!-- Copia de la página tal como llega, antes de que corran los programas: el panel la usa para generar el HTML de un solo archivo. Debe ir al final. -->
+<script id="bp-pristine">window.BP_PRISTINE = "<!doctype html>\n" + document.documentElement.outerHTML;</script>
 </body>
 </html>

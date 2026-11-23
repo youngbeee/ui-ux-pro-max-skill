@@ -13,7 +13,8 @@ Sitio estático: no necesita servidor ni base de datos. Se sube tal cual a cualq
 | `data/productos.json` | Catálogo: 2,755 productos (código, descripción, marca, medida, familia, subfamilia) |
 | `data/productos.js` | Copia del catálogo que se usa cuando la página se abre con doble clic. Se regenera sola al importar el Excel, o con `node herramientas/generar-productos-js.mjs` |
 | `img/p/` · `img/t/` | Fotos WebP de 520 px (ficha) y miniaturas de 320 px (tarjetas). 1,468 fotos, nombradas por código |
-| `admin/` | Herramientas para actualizar el catálogo desde Excel |
+| `assets/admin.js`, `assets/admin.css` | Panel de administración con contraseña (Excel, fotos, descarga en un solo HTML) |
+| `admin/` | Herramienta de línea de comandos para actualizar el catálogo desde Excel |
 | `herramientas/verificar-imagenes.mjs` | Lista las fotos del catálogo que faltan en el disco o tienen otras mayúsculas |
 | `robots.txt`, `sitemap.xml` | SEO |
 
@@ -49,11 +50,25 @@ Para volver a sacar el Excel desde la web publicada: `python3 admin/exportar_exc
 
 Las familias y subfamilias nuevas aparecen solas en los filtros y en las categorías.
 
-## Panel administrativo con contraseña
+## Panel de administración (Excel, fotos y descarga en un solo HTML)
 
-No se incluye un panel con contraseña dentro de la página: un panel en un sitio estático sería público aunque «pida» clave. El archivo original traía un hash de contraseña en el HTML y **no** se copió.
+Se abre con el enlace **«Administrar»** del pie de página, o agregando `#admin` a la dirección. Contraseña inicial: **`Frenos2026`** (cámbiala en la pestaña «Contraseña»).
 
-Si más adelante quieren editar desde el navegador, la opción recomendada es un CMS con autenticación real del proveedor (por ejemplo Decap CMS con inicio de sesión de GitHub/Netlify, o una pequeña API con Supabase Auth) que escriba el mismo `data/productos.json`. La web no necesita cambios para eso.
+| Pestaña | Qué hace |
+|---|---|
+| Productos (Excel) | Lee un `.xlsx`, `.xls` o `.csv` con las columnas Código, Descripción, Marca, Medida, Familia, Subfamilia. Muestra una vista previa (nuevos, con cambios, sin cambios) y deja **combinar** o **reemplazar** el catálogo. También descarga una plantilla y el Excel con los productos actuales. |
+| Fotos | Arrastra fotos o una carpeta. Cada foto se nombra con el código del producto (`30610-01J60NBN.jpg`), se ajusta a 520 px y se guarda en WebP. |
+| Descargar HTML | Genera **toda la página en un solo archivo HTML** (diseño, programas, productos, fotos y este mismo panel). Se abre con doble clic y funciona sin internet. Calidad de fotos: normal (≈14 MB), alta o sin fotos del catálogo. |
+| Contraseña | Cambia la contraseña; queda guardada en el próximo HTML que descargues. |
+
+Cómo funciona:
+
+- Los cambios se hacen en el navegador y **se guardan al descargar el HTML**. Mientras no lo descargues, el panel muestra un aviso y el navegador pregunta antes de cerrar la pestaña.
+- Desde el archivo de un solo HTML se puede volver a cargar Excel y fotos y descargar una versión nueva, sin internet.
+- Si la página se abre desde la carpeta con doble clic, el navegador no deja leer sus propios archivos y la descarga del HTML no está disponible: usa `FRENOS-PARTS-ESTOC.html` (versión de un solo archivo) o el sitio publicado.
+- Para un hosting con carpetas, la pestaña Productos también descarga `productos.json` y `productos.js` para reemplazar en `data/`.
+- La contraseña se guarda solo como huella SHA-256 (`<script id="bp-admin">`). En una página estática es un candado para el panel, no una cuenta de servidor: los cambios solo afectan a la copia de quien los hace y al archivo que descarga, nunca a la web publicada.
+- Archivos: `assets/admin.js`, `assets/admin.css`, `assets/vendor/xlsx.full.min.js` (lector de Excel SheetJS 0.18.5, licencia Apache 2.0).
 
 ## Enlaces que se pueden compartir
 

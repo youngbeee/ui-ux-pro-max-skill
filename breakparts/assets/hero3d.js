@@ -27,6 +27,8 @@
   var IDLE_AFTER_USER = 7000;         // ms sin tocar antes de volver a girar solo
   var TAU = Math.PI * 2;
 
+  // En el HTML de un solo archivo las imágenes vienen incluidas en window.BP_ASSETS
+  var asset = function (p) { return (window.BP_ASSETS && window.BP_ASSETS[p]) || p; };
   var stage = document.getElementById('stage');
   if (!stage) return;
 
@@ -36,9 +38,11 @@
       id: p.id,
       nombre: p.nombre,
       ir: p.ir || { q: p.buscar || p.nombre },
-      img: p.img || ('assets/piezas/' + p.id + '.webp')
+      img: asset(p.img || ('assets/piezas/' + p.id + '.webp'))
     };
   });
+  // rutas de las piezas, para incluirlas en el HTML de un solo archivo
+  window.BP_HERO_IMGS = (Array.isArray(cfg.piezas) && cfg.piezas.length ? cfg.piezas : PIEZAS).map(function (p) { return p.img || ('assets/piezas/' + p.id + '.webp'); });
   var n = piezas.length;
   var step = TAU / n;
 
@@ -58,7 +62,7 @@
   root.innerHTML =
     '<div class="orbit__scene"><div class="orbit__world">' +
       '<div class="orbit__track"></div><div class="orbit__track--in"></div>' +
-      '<div class="orbit__core" aria-hidden="true"><img src="assets/logo-fpe.webp" alt=""></div>' +
+      '<div class="orbit__core" aria-hidden="true"><img src="' + asset('assets/logo-fpe.webp') + '" alt=""></div>' +
     '</div></div>' +
     '<div class="orbit__hud">' +
       '<button class="orbit__btn" type="button" data-dir="-1" aria-label="Pieza anterior">' + ARROW_L + '</button>' +

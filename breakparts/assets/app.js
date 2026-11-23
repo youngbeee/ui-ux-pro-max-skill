@@ -20,7 +20,8 @@ function openWA(text) {
 }
 let toastT;
 function toast(msg) {
-  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  const t = $("#toast"), top = $$("dialog[open]").pop();
+  if (top && t.parentElement !== top) top.appendChild(t); else if (!top && t.parentElement !== document.body) document.body.appendChild(t); t.textContent = msg; t.classList.add("show");
   clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2400);
 }
 async function copyText(text, btn) {
@@ -59,13 +60,16 @@ const noImg = (f, label = "Foto no disponible") => `<div class="noimg">${glyphFo
 const WA_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.1.3.6 1.1 1.4 1.8 1 .9 1.8 1.1 2 1.2.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.4Z"/></svg>';
 
 /* ---------- Imágenes (archivos o paquetes) ---------- */
+// Fotos incluidas en el HTML de un solo archivo o subidas desde el panel (window.BP_IMGS) tienen prioridad sobre la carpeta img/
+const EMB = () => window.BP_IMGS || (window.BP_IMGS = {});
+const asset = p => (window.BP_ASSETS && window.BP_ASSETS[p]) || p;
 const IMG = (() => {
   const m = C.imagenes;
   if (m.modo !== "paquetes") {
     return {
-      thumb: s => Promise.resolve(m.miniatura + s + ".webp"),
-      full: s => Promise.resolve(m.grande + s + ".webp"),
-      sync: s => m.miniatura + s + ".webp"
+      thumb: s => Promise.resolve(EMB()[s] || m.miniatura + s + ".webp"),
+      full: s => Promise.resolve(EMB()[s] || m.grande + s + ".webp"),
+      sync: s => EMB()[s] || m.miniatura + s + ".webp"
     };
   }
   let idx; const packs = new Map();
@@ -129,14 +133,20 @@ function loadBackup() {
     document.head.appendChild(sc);
   });
 }
+let DOC = null;
 async function loadData() {
   let d;
-  try {
+  if (window.BP_EMBED) d = window.BP_EMBED;   // HTML de un solo archivo: los productos vienen incluidos
+  else try {
     if (location.protocol === "file:") throw new Error("file://");
     const r = await fetch(C.datos, { cache: "no-cache" });
     if (!r.ok) throw new Error("HTTP " + r.status);
     d = JSON.parse((await r.text()).replace(/^﻿/, ""));
   } catch (e) { d = await loadBackup(); }
+  ingestData(d);
+}
+function ingestData(d) {
+  DOC = d;
   const F = d.campos;
   const ix = k => F.indexOf(k);
   const [iC, iD, iM, iMe, iF, iS, iSl, iI] = ["cod", "desc", "marca", "medida", "fam", "sub", "slug", "img"].map(ix);
@@ -343,7 +353,7 @@ function openProduct(slug, push = true, from = null) {
   const it = BY_SLUG.get(slug); if (!it) return;
   current = it;
   const media = $("#p-media");
-  if (CUTS.has(slug)) media.innerHTML = `<img class="pp-cut" src="assets/estante/${slug}.webp" alt="${esc(it.desc)}" draggable="false">`;
+  if (CUTS.has(slug)) media.innerHTML = `<img class="pp-cut" src="${asset(`assets/estante/${slug}.webp`)}" alt="${esc(it.desc)}" draggable="false">`;
   else if (it.img) {
     media.innerHTML = `<img class="pp-photo" data-slug="${it.slug}" alt="${esc(it.desc)}" draggable="false">`;
     const im = $("img", media);
@@ -653,13 +663,14 @@ function buildBento() {
     let slug = meta.img && BY_SLUG.get(meta.img)?.img ? meta.img : null;
     if (!slug && !meta.pic && !meta.ill) slug = ITEMS.find(i => i.fam === f && i.img)?.slug;
     const visual = slug ? `<span class="tile__ph" data-bg="${slug}"></span>`
-      : meta.pic ? `<img src="${esc(meta.pic)}" alt="" loading="lazy" decoding="async" width="160" height="160">`
+      : meta.pic ? `<img src="${esc(asset(meta.pic))}" alt="" loading="lazy" decoding="async" width="160" height="160">`
       : glyphFor(f).replace("<svg", '<svg fill="none" stroke="currentColor" stroke-width="1.6"');
     return tile(f, visual, meta.n, `${fmt(cnt.get(f))} productos`, "Ver " + meta.n.toLowerCase());
   }).join("");
   const all = tile("", GLYPH.disc.replace("<svg", '<svg fill="none" stroke="currentColor" stroke-width="2.4"'), "Todo el catálogo", `${fmt(ITEMS.length)} productos`, "Ver todo");
   $("#bento").innerHTML = html + all;
   $$("[data-bg]").forEach(el => bgImg(el, el.dataset.bg));
+  $$("#foot-cats [data-goto-fam]").forEach(a => a.remove());
   $("#foot-cats").insertAdjacentHTML("beforeend", fams.map(f => `<a href="#catalogo" data-goto-fam="${esc(f)}">${esc(famName(f))}</a>`).join(""));
 }
 function buildFeatured() {
@@ -670,7 +681,7 @@ function buildFeatured() {
   for (let k = 0; k < picks.length; k += per) {
     const row = picks.slice(k, k + per);
     html += `<div class="shelf" style="--n:${per}">
-      <div class="shelf__row">${row.map(([it, n, v]) => `<button class="shelf__item" type="button" data-open="${it.slug}" aria-label="${esc(n)}, ${esc(v)}"><img src="assets/estante/${it.slug}.webp" alt="" loading="lazy" decoding="async" draggable="false"></button>`).join("")}</div>
+      <div class="shelf__row">${row.map(([it, n, v]) => `<button class="shelf__item" type="button" data-open="${it.slug}" aria-label="${esc(n)}, ${esc(v)}"><img src="${asset(`assets/estante/${it.slug}.webp`)}" alt="" loading="lazy" decoding="async" draggable="false"></button>`).join("")}</div>
       <div class="shelf__board" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="shelf__labels">${row.map(([, n, v]) => `<div><b>${esc(n)}</b><span>${esc(v)}</span></div>`).join("")}</div>
     </div>`;
@@ -771,6 +782,13 @@ async function init() {
   reveal();
   if (prod) openProduct(prod, false);
   window.BP = { items: () => ITEMS, state: st, filtered: () => FILTERED, quoteMsg, cart: () => CART };
+  // Para el panel de administración (assets/admin.js)
+  window.BP_APP = {
+    doc: () => DOC,
+    reload(d) { ingestData(d); buildStats(); buildBento(); buildGauge(); buildFeatured(); apply(); },
+    assetPaths: () => [...SHELF.map(([s]) => `assets/estante/${s}.webp`), FAM.PASTILLA.pic]
+  };
+  document.dispatchEvent(new CustomEvent("bp:ready"));
 }
 init();
 })();
