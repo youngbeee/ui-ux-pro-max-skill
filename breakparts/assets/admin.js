@@ -355,6 +355,14 @@ function setScript(doc, id, code, type) {
 async function buildHTML(q, progress) {
   const doc = new DOMParser().parseFromString(window.BP_PRISTINE, "text/html");
   const step = (t, p) => progress(t, p);
+  // Lo que no debe viajar en el archivo: ajustes de una vista previa, scripts externos y metadatos de la página anfitriona
+  const drop = el => el && el.parentNode && el.parentNode.removeChild(el);
+  drop(doc.getElementById("bp-preview"));
+  $$('script[src^="http"], script[src^="//"], meta[http-equiv], meta[name^="claude:"]', doc).forEach(drop);
+  let cs = doc.querySelector("meta[charset]");
+  if (!cs) { cs = doc.createElement("meta"); doc.head.prepend(cs); }
+  cs.setAttribute("charset", "utf-8");
+  if (!doc.querySelector('meta[name="viewport"]')) { const v = doc.createElement("meta"); v.name = "viewport"; v.content = "width=device-width,initial-scale=1,viewport-fit=cover"; cs.after(v); }
   if (!SINGLE) {
     step("Incluyendo diseño y programas…", 2);
     for (const l of $$('link[rel="stylesheet"][href]', doc)) {
@@ -386,7 +394,10 @@ async function buildHTML(q, progress) {
     const dir = q === "p" ? (C.imagenes && C.imagenes.grande) || "img/p/" : (C.imagenes && C.imagenes.miniatura) || "img/t/";
     let done = 0;
     await pool(need, 8, async o => {
-      try { imgs[o.slug] = await toData(await get(dir + o.slug + ".webp", "blob")); } catch {}
+      try {
+        if (window.BP_APP.packs) { const v = await window.BP_APP.photo(o.slug, q === "p"); if (/^data:/.test(v)) imgs[o.slug] = v; }
+        else imgs[o.slug] = await toData(await get(dir + o.slug + ".webp", "blob"));
+      } catch {}
       if (++done % 20 === 0 || done === need.length) step(`Incluyendo fotos del catálogo… ${fmt(done)} de ${fmt(need.length)}`, 8 + done / need.length * 82);
     });
   }

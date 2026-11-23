@@ -786,7 +786,9 @@ async function init() {
   window.BP_APP = {
     doc: () => DOC,
     reload(d) { ingestData(d); buildStats(); buildBento(); buildGauge(); buildFeatured(); apply(); },
-    assetPaths: () => [...SHELF.map(([s]) => `assets/estante/${s}.webp`), FAM.PASTILLA.pic]
+    assetPaths: () => [...SHELF.map(([s]) => `assets/estante/${s}.webp`), FAM.PASTILLA.pic],
+    packs: C.imagenes.modo === "paquetes",
+    photo: (s, full) => IMG[full ? "full" : "thumb"](s)
   };
   document.dispatchEvent(new CustomEvent("bp:ready"));
 }
