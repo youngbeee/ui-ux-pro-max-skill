@@ -7,8 +7,10 @@ Uso (desde la carpeta del sitio):
     python3 admin/importar_excel.py catalogo.xlsx --fotos fotos/  # datos + fotos nuevas
 
 El Excel (o CSV) debe tener estas columnas en la primera fila (el orden no importa):
-    Código | Descripción | Marca | Medida | Familia | Subfamilia
+    Código | Descripción | Marca | Medida | Familia | Subfamilia      (opcional: Código FPE)
 
+- Código FPE: es el código que la web muestra y envía por WhatsApp (FPE0001, FPE0002…). Si la columna falta o
+  la celda está vacía, se conserva el que el producto ya tenía o se asigna el siguiente número libre.
 - Agregar productos: añade filas.  Eliminar: borra la fila.  Editar: cambia la celda.
 - Fotos: nómbralas con el código del producto (ej. 30610-01J60NBN.jpg). Se aceptan JPG, PNG y WEBP.
   Se convierten a WebP (520 px) y se crea la miniatura (320 px). Una foto nueva reemplaza la anterior.
@@ -26,6 +28,7 @@ except ImportError:
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COLS = {
+    "fpe": r".*FPE",
     "cod": r"^(COD|SKU|REFER|NUMERO DE PARTE)",
     "desc": r"^(DESCR|PRODUCTO|NOMBRE|DETALLE)",
     "marca": r"^MARCA",
@@ -57,7 +60,7 @@ def leer(ruta):
     mapa = {}
     for k, rx in COLS.items():
         for i, c in enumerate(cab):
-            if re.match(rx, c) and i not in mapa.values() and not (k == "fam" and c.startswith("SUB")):
+            if re.match(rx, c) and i not in mapa.values() and not (k == "fam" and c.startswith("SUB")) and not (k == "cod" and "FPE" in c):
                 mapa[k] = i; break
     if "cod" not in mapa:
         sys.exit("No encontré la columna 'Código' en la primera fila.")
@@ -69,6 +72,17 @@ def main():
     filas, mapa = leer(sys.argv[1])
     fotos = sys.argv[sys.argv.index("--fotos") + 1] if "--fotos" in sys.argv else None
     os.makedirs(f"{RAIZ}/img/p", exist_ok=True); os.makedirs(f"{RAIZ}/img/t", exist_ok=True)
+
+    # códigos FPE que ya tenían los productos (se conservan si el Excel no trae uno)
+    previos = {}
+    try:
+        with open(f"{RAIZ}/data/productos.json", encoding="utf-8") as f:
+            ant = json.load(f)
+        if "fpe" in ant["campos"]:
+            ic, ip = ant["campos"].index("cod"), ant["campos"].index("fpe")
+            previos = {r[ic]: r[ip] for r in ant["items"] if len(r) > ip and r[ip]}
+    except (OSError, ValueError, KeyError):
+        pass
 
     nuevas = {}
     if fotos:
@@ -96,10 +110,18 @@ def main():
             convertidas += 1
         tiene = os.path.exists(f"{RAIZ}/img/t/{slug}.webp")
         sin_foto += not tiene
-        rows.append([cod, g(r, "desc"), g(r, "marca").upper(), g(r, "medida"), g(r, "fam").upper(), g(r, "sub").upper(), slug, 1 if tiene else 0])
+        fpe = re.sub(r"\s+", "", g(r, "fpe").upper()) or previos.get(cod, "")
+        rows.append([cod, g(r, "desc"), g(r, "marca").upper(), g(r, "medida"), g(r, "fam").upper(), g(r, "sub").upper(), slug, 1 if tiene else 0, fpe])
+
+    usados_fpe = [int(m.group(1)) for x in rows for m in [re.match(r"^FPE(\d+)$", x[8])] if m]
+    sig = max(usados_fpe, default=0)
+    for x in rows:
+        if not x[8]:
+            sig += 1
+            x[8] = f"FPE{sig:04d}"
 
     doc = {"v": 2, "generado": datetime.date.today().isoformat(),
-           "campos": ["cod", "desc", "marca", "medida", "fam", "sub", "slug", "img"], "items": rows}
+           "campos": ["cod", "desc", "marca", "medida", "fam", "sub", "slug", "img", "fpe"], "items": rows}
     with open(f"{RAIZ}/data/productos.json", "w", encoding="utf-8") as f:
         json.dump(doc, f, ensure_ascii=False, separators=(",", ":"))
     # Respaldo para abrir la página con doble clic (file://), donde el navegador no deja leer el JSON

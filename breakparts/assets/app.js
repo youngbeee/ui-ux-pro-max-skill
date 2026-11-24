@@ -111,7 +111,9 @@ function measureVal(m) {
 const cmpMeasure = (a, b) => measureVal(a) - measureVal(b) || String(a).localeCompare(b, "es", { numeric: true });
 
 /* ---------- Estado ---------- */
-let ITEMS = [], BY_SLUG = new Map();
+let ITEMS = [], BY_SLUG = new Map(), BY_URL = new Map();
+// En la dirección de la ficha va el código FPE (?producto=fpe0026), no el código original
+const urlId = it => it.fpe ? it.fpe.toLowerCase() : it.slug;
 const st = { q: "", fam: "", sub: "", marca: "", medida: "", sis: "", foto: false, sort: "rel" };
 let FILTERED = [], shown = 0;
 
@@ -149,15 +151,19 @@ function ingestData(d) {
   DOC = d;
   const F = d.campos;
   const ix = k => F.indexOf(k);
-  const [iC, iD, iM, iMe, iF, iS, iSl, iI] = ["cod", "desc", "marca", "medida", "fam", "sub", "slug", "img"].map(ix);
+  const [iC, iD, iM, iMe, iF, iS, iSl, iI, iFp] = ["cod", "desc", "marca", "medida", "fam", "sub", "slug", "img", "fpe"].map(ix);
   ITEMS = d.items.map((r, i) => {
-    const it = { i, cod: r[iC] || "", desc: r[iD] || "", marca: r[iM] || "", medida: r[iMe] || "", fam: r[iF] || "", sub: r[iS] || "", slug: r[iSl], img: !!r[iI] };
-    it.key = " " + norm([it.cod, it.desc, it.marca, it.medida, it.fam, famName(it.fam), it.sub].join(" ")) + " ";
+    const it = { i, cod: r[iC] || "", desc: r[iD] || "", marca: r[iM] || "", medida: r[iMe] || "", fam: r[iF] || "", sub: r[iS] || "", slug: r[iSl], img: !!r[iI], fpe: iFp < 0 ? "" : (r[iFp] || "") };
+    // Código que se muestra y se envía: el código FPE si existe; si no, el original. El original se sigue pudiendo buscar.
+    it.show = it.fpe || it.cod;
+    it.fc = compact(it.fpe);
+    it.key = " " + norm([it.cod, it.fpe, it.desc, it.marca, it.medida, it.fam, famName(it.fam), it.sub].join(" ")) + " ";
     it.cc = compact(it.cod);
     it.sis = sysOf(it);
     return it;
   });
   BY_SLUG = new Map(ITEMS.map(it => [it.slug, it]));
+  BY_URL = new Map(ITEMS.filter(it => it.fpe).map(it => [it.fpe.toLowerCase(), it]));
 }
 
 /* ---------- Búsqueda ---------- */
@@ -169,11 +175,12 @@ function matchTok(it, t) {
   if (it.key.includes(t)) return true;
   if (t === "EMBRAGUE" && it.key.includes("EMBR")) return true;
   const c = compact(t);
-  return c.length >= 3 && it.cc.includes(c);
+  return c.length >= 3 && (it.cc.includes(c) || (it.fc && it.fc.includes(c)));
 }
 function score(it, toks, qc) {
   let s = 0;
-  if (qc && it.cc === qc) s += 1000;
+  if (qc && (it.cc === qc || it.fc === qc)) s += 1000;
+  else if (qc && qc.length >= 3 && it.fc && it.fc.startsWith(qc)) s += 400;
   else if (qc && qc.length >= 3 && it.cc.startsWith(qc)) s += 400;
   else if (qc && qc.length >= 3 && it.cc.includes(qc)) s += 150;
   for (const t of toks) {
@@ -203,8 +210,8 @@ function apply() {
   const loc = (a, b) => a.localeCompare(b, "es", { numeric: true });
   if (st.sort === "name") FILTERED.sort((a, b) => loc(a.desc, b.desc) || a.i - b.i);
   else if (st.sort === "name-d") FILTERED.sort((a, b) => loc(b.desc, a.desc) || a.i - b.i);
-  else if (st.sort === "cod") FILTERED.sort((a, b) => loc(a.cod, b.cod));
-  else if (st.sort === "cod-d") FILTERED.sort((a, b) => loc(b.cod, a.cod));
+  else if (st.sort === "cod") FILTERED.sort((a, b) => loc(a.show, b.show));
+  else if (st.sort === "cod-d") FILTERED.sort((a, b) => loc(b.show, a.show));
   else if (toks.length) { FILTERED.forEach(it => it._s = score(it, toks, qc)); FILTERED.sort((a, b) => b._s - a._s || a.i - b.i); }
   else FILTERED.sort((a, b) => b.img - a.img || a.i - b.i);
   facets(toks);
@@ -260,7 +267,7 @@ function card(it, k) {
     <button class="card__open" type="button" data-open="${it.slug}" aria-label="Ver ficha: ${esc(it.desc)}">
       <div class="card__media">${media}<span class="card__tag">${esc(famName(it.fam))}</span></div>
       <div class="card__body">
-        <span class="card__cod mono">${esc(it.cod)}</span>
+        <span class="card__cod mono">${esc(it.show)}</span>
         <h3 class="card__desc">${esc(it.desc)}</h3>
         <div class="card__meta">${meta}</div>
         <span class="card__price">Precio: <b>Consultar precio</b></span>
@@ -327,7 +334,7 @@ function readURL() {
 let current = null;
 // Los mensajes de WhatsApp llevan solo el código del producto (sin descripción, marca ni medida)
 function productMsg(it) {
-  return `Hola, quisiera consultar el precio y la disponibilidad de este producto de FRENOS PARTS ESTOC:\n• Código: *${it.cod}*`;
+  return `Hola, quisiera consultar el precio y la disponibilidad de este producto de FRENOS PARTS ESTOC:\n• Código: *${it.show}*`;
 }
 // Destacados del estante: [producto, nombre corto, vehículo y medida]. Cada uno tiene su recorte en assets/estante/
 const SHELF = [   // ocho tipos de repuesto distintos, sin repetir
@@ -351,7 +358,8 @@ function flight(from, media) {
   return `translate(${(s.left + s.width / 2 - (t.left + t.width / 2)).toFixed(1)}px,${(s.bottom - t.bottom).toFixed(1)}px) scale(${(s.height / t.height).toFixed(4)})`;
 }
 function openProduct(slug, push = true, from = null) {
-  const it = BY_SLUG.get(slug); if (!it) return;
+  const it = BY_SLUG.get(slug) || BY_URL.get(String(slug).toLowerCase()); if (!it) return;
+  slug = it.slug;
   current = it;
   const media = $("#p-media");
   if (CUTS.has(slug)) media.innerHTML = `<img class="pp-cut" src="${asset(`assets/estante/${slug}.webp`)}" alt="${esc(it.desc)}" draggable="false">`;
@@ -365,7 +373,7 @@ function openProduct(slug, push = true, from = null) {
   $("#p-desc").textContent = it.desc;
   $("#p-tag").textContent = [it.marca, it.medida].filter(Boolean).join(" · ");
   $("#p-tag").hidden = !it.marca && !it.medida;
-  $("#p-cod").textContent = it.cod;
+  $("#p-cod").textContent = it.show;
   $("#p-specs").innerHTML = [["Marca", it.marca], ["Medida", it.medida], ["Familia", famName(it.fam)], ["Subfamilia", subName(it.sub)]]
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v || "—")}</dd></div>`).join("");
   $("#p-qty").value = cartQty(it.slug) || 1;
@@ -389,7 +397,7 @@ function openProduct(slug, push = true, from = null) {
       media.firstElementChild?.animate([{ transform: "rotateY(-34deg)" }, { transform: "rotateY(0deg)" }], { duration: 950, easing: "cubic-bezier(.25,.1,.25,1)" });
     }
   }
-  if (push && C.sincronizarURL) { try { const p = new URLSearchParams(location.search); p.set("producto", slug); history.pushState({ p: slug }, "", "?" + p); } catch {} }
+  if (push && C.sincronizarURL) { try { const p = new URLSearchParams(location.search); p.set("producto", urlId(it)); history.pushState({ p: slug }, "", "?" + p); } catch {} }
   document.title = `${it.desc} | FRENOS PARTS ESTOC`;
 }
 function closeProduct(fromPop) {
@@ -429,7 +437,7 @@ $("#product").addEventListener("click", e => { if (e.target.closest("[data-close
   };
   m.addEventListener("pointerup", up); m.addEventListener("pointercancel", up);
 })();
-$("#p-copy").addEventListener("click", e => current && copyText(current.cod, e.currentTarget));
+$("#p-copy").addEventListener("click", e => current && copyText(current.show, e.currentTarget));
 $$(".qty [data-q]", $("#product")).forEach(b => b.addEventListener("click", () => {
   const i = $("#p-qty"); i.value = Math.max(1, Math.min(999, (+i.value || 1) + +b.dataset.q));
 }));
@@ -483,7 +491,7 @@ function renderQuote() {
   $("#qlist").innerHTML = rows.map(r => {
     const it = lineItem(r);
     const media = it ? (it.img ? imgTag(it) : noImg(it.fam, "")) : `<div class="noimg noimg--txt">${GLYPH.disc}</div>`;
-    const title = it ? `<span class="mono">${esc(it.cod)}</span><span>${esc(it.desc)}</span><small>${esc([it.marca, it.medida].filter(Boolean).join(" · "))}</small>`
+    const title = it ? `<span class="mono">${esc(it.show)}</span><span>${esc(it.desc)}</span><small>${esc([it.marca, it.medida].filter(Boolean).join(" · "))}</small>`
                      : `<span class="mono">Sin código</span><span>${esc(r.text)}</span><small>Lo buscamos por ti</small>`;
     return `<li class="qitem">
       <div class="qitem__img">${media}</div>
@@ -508,7 +516,7 @@ function custData() {
 function quoteMsg() {
   const d = custData();
   const lines = CART.map(r => [r, lineItem(r)]).filter(([r, it]) => it || r.text).map(([r, it], k) => it
-    ? `${k + 1}. *${it.cod}* x ${r.qty}`
+    ? `${k + 1}. *${it.show}* x ${r.qty}`
     : `${k + 1}. (Sin código) ${r.text} x ${r.qty}`);
   const units = CART.reduce((a, r) => a + r.qty, 0);
   const datos = [["Nombre", d.n], ["Cliente", d.t], ["Vehículo", d.v], ["Ciudad", d.c], ["Entrega", d.e], ["Consulta", d.m]].filter(x => x[1]).map(([k, v]) => `${k}: ${v}`);

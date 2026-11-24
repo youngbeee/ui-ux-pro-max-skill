@@ -50,11 +50,22 @@ Para volver a sacar el Excel desde la web publicada: `python3 admin/exportar_exc
 
 Las familias y subfamilias nuevas aparecen solas en los filtros y en las categorías.
 
+## Códigos FPE (prueba)
+
+Cada producto tiene un **código FPE** (`FPE0001` a `FPE2755`, en el orden del catálogo) que reemplaza al código original en todo lo que se ve y se envía:
+
+- Tarjetas y ficha (solo al entrar con usuario), lista de cotización y mensajes de WhatsApp.
+- La dirección de la ficha usa el código FPE: `?producto=fpe0026`.
+- El buscador encuentra el producto por código FPE **o** por código original.
+- La equivalencia está en `admin/codigos-fpe.xlsx` (Código FPE · Código original · descripción…). Se guarda en `data/productos.json` como el campo `fpe`.
+- Al cargar un Excel (panel o `admin/importar_excel.py`) se respeta la columna «Código FPE». Si falta o está vacía, el producto conserva el que tenía o recibe el siguiente número libre.
+- Para volver a mostrar los códigos originales basta con quitar el campo `fpe` de los datos.
+
 ## Pantalla de entrada: usuario o invitado
 
 Al abrir la página aparece la pantalla **«¿Cómo quieres entrar?»**:
 
-- **Entrar con usuario:** se ven los códigos de los productos en las tarjetas y en la ficha, y se puede ordenar por código.
+- **Entrar con usuario:** se ven los códigos FPE de los productos en las tarjetas y en la ficha, y se puede ordenar por código.
 - **Entrar como invitado:** el catálogo se ve sin códigos, como antes.
 - En los dos casos el mensaje de cotización por WhatsApp lleva los códigos.
 - Cada navegador recuerda su elección. El botón con el ícono de persona en la cabecera (dice «Invitado» o el nombre del usuario) vuelve a abrir la pantalla para cambiar de modo.

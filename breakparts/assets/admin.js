@@ -19,10 +19,10 @@ const keyOf = c => String(c ?? "").trim().toUpperCase();
 const slugify = c => String(c).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "producto";
 const fmt = n => n.toLocaleString("en-US");
 const today = () => new Date().toISOString().slice(0, 10);
-const FIELDS = ["cod", "desc", "marca", "medida", "fam", "sub", "slug", "img"];
-const EDIT = ["cod", "desc", "marca", "medida", "fam", "sub"];
-const LABEL = { cod: "Código", desc: "Descripción", marca: "Marca", medida: "Medida", fam: "Familia", sub: "Subfamilia" };
-const COLS = { cod: /^(COD|SKU|REFER|NUMERO DE PARTE)/, desc: /^(DESCR|PRODUCTO|NOMBRE|DETALLE)/, marca: /^MARCA/, medida: /^MEDIDA/, fam: /^(FAMILIA|CATEGOR|TIPO)/, sub: /^SUB/ };
+const FIELDS = ["cod", "desc", "marca", "medida", "fam", "sub", "slug", "img", "fpe"];
+const EDIT = ["fpe", "cod", "desc", "marca", "medida", "fam", "sub"];
+const LABEL = { fpe: "Código FPE", cod: "Código", desc: "Descripción", marca: "Marca", medida: "Medida", fam: "Familia", sub: "Subfamilia" };
+const COLS = { fpe: /FPE/, cod: /^(COD|SKU|REFER|NUMERO DE PARTE)/, desc: /^(DESCR|PRODUCTO|NOMBRE|DETALLE)/, marca: /^MARCA/, medida: /^MEDIDA/, fam: /^(FAMILIA|CATEGOR|TIPO)/, sub: /^SUB/ };
 const IMGS = () => window.BP_IMGS || (window.BP_IMGS = {});
 const ready = new Promise(ok => window.BP_APP ? ok() : document.addEventListener("bp:ready", ok, { once: true }));
 const NEW_IMGS = new Set();
@@ -164,7 +164,7 @@ async function readExcel(file) {
   const head = aoa[h].map(norm), map = {};
   for (const [k, rx] of Object.entries(COLS))
     for (let i = 0; i < head.length; i++)
-      if (rx.test(head[i]) && !Object.values(map).includes(i) && !(k === "fam" && head[i].startsWith("SUB"))) { map[k] = i; break; }
+      if (rx.test(head[i]) && !Object.values(map).includes(i) && !(k === "fam" && head[i].startsWith("SUB")) && !(k === "cod" && /FPE/.test(head[i]))) { map[k] = i; break; }
   const seen = new Set(), out = [];
   let dup = 0;
   for (const r of aoa.slice(h + 1)) {
@@ -177,6 +177,7 @@ async function readExcel(file) {
     if ("medida" in map) o.medida = g("medida");
     if ("fam" in map) o.fam = norm(g("fam"));
     if ("sub" in map) o.sub = norm(g("sub"));
+    if ("fpe" in map && g("fpe")) o.fpe = g("fpe").toUpperCase().replace(/\s+/g, "");   // vacío: se conserva o se asigna solo
     out.push(o);
   }
   return { list: out, map, dup, name: file.name };
@@ -230,6 +231,9 @@ function applyExcel() {
     while (used.has(s)) s = `${base}-${n++}`;
     used.add(s); o.slug = s; o.img = IMGS()[s] ? 1 : 0;
   });
+  // productos sin código FPE: reciben el siguiente número libre (FPE0001, FPE0002…)
+  let next = out.reduce((m, o) => Math.max(m, +((/^FPE(\d+)$/.exec(o.fpe || "") || [])[1] || 0)), 0);
+  out.forEach(o => { if (!o.fpe) o.fpe = "FPE" + String(++next).padStart(4, "0"); });
   commit(out);
   PARSED = null; $("#xl-prev").hidden = true; $("#xl-file").value = "";
   note(`Catálogo actualizado: ${fmt(out.length)} productos.`);
@@ -238,7 +242,7 @@ async function downloadSheet(list, name) {
   const X = await loadXLSX();
   const aoa = [EDIT.map(f => LABEL[f]), ...list.map(o => EDIT.map(f => o[f] ?? ""))];
   const ws = X.utils.aoa_to_sheet(aoa);
-  ws["!cols"] = [18, 60, 12, 12, 14, 16].map(wch => ({ wch }));
+  ws["!cols"] = [13, 18, 60, 12, 12, 14, 16].map(wch => ({ wch }));
   const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, "Productos");
   const buf = X.write(wb, { bookType: "xlsx", type: "array" });
   await saveFile(name, new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
@@ -246,7 +250,7 @@ async function downloadSheet(list, name) {
 $("#xl-file").addEventListener("change", e => takeExcel(e.target.files[0]));
 $("#xl-apply").addEventListener("click", applyExcel);
 $("#xl-cancel").addEventListener("click", () => { PARSED = null; $("#xl-prev").hidden = true; $("#xl-file").value = ""; });
-$("#xl-tpl").addEventListener("click", () => downloadSheet([{ cod: "30610-01J60NBN", desc: "BOMBA DE EMBRAGUE NISSAN SENTRA B13 5/8", marca: "NBN", medida: "5/8", fam: "BOMBA", sub: "EMBRAGUE" }], "plantilla-productos.xlsx").catch(e => note(e.message)));
+$("#xl-tpl").addEventListener("click", () => downloadSheet([{ fpe: "", cod: "30610-01J60NBN", desc: "BOMBA DE EMBRAGUE NISSAN SENTRA B13 5/8", marca: "NBN", medida: "5/8", fam: "BOMBA", sub: "EMBRAGUE" }], "plantilla-productos.xlsx").catch(e => note(e.message)));
 $("#xl-cur").addEventListener("click", () => downloadSheet(rows(), `productos-frenos-parts-estoc-${today()}.xlsx`).catch(e => note(e.message)));
 $("#json-dl").addEventListener("click", async () => {
   const j = JSON.stringify(docOf(rows()));
