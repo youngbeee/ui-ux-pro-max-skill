@@ -50,6 +50,18 @@ Para volver a sacar el Excel desde la web publicada: `python3 admin/exportar_exc
 
 Las familias y subfamilias nuevas aparecen solas en los filtros y en las categorías.
 
+## Pantalla de entrada: usuario o invitado
+
+Al abrir la página aparece la pantalla **«¿Cómo quieres entrar?»**:
+
+- **Entrar con usuario:** se ven los códigos de los productos en las tarjetas y en la ficha, y se puede ordenar por código.
+- **Entrar como invitado:** el catálogo se ve sin códigos, como antes.
+- En los dos casos el mensaje de cotización por WhatsApp lleva los códigos.
+- Cada navegador recuerda su elección. El botón con el ícono de persona en la cabecera (dice «Invitado» o el nombre del usuario) vuelve a abrir la pantalla para cambiar de modo.
+- Usuario inicial: **`fpe`** con contraseña **`Codigos2026`**. Los usuarios se crean y se borran en el panel, pestaña «Accesos». También se puede entrar con el usuario `admin` y la contraseña del panel.
+- Es una forma de presentar el catálogo, no una protección de datos: los códigos viajan dentro de la página porque la cotización los necesita.
+- Archivos: `assets/acceso.js`, `assets/acceso.css`.
+
 ## Panel de administración (Excel, fotos y descarga en un solo HTML)
 
 Se abre con el enlace **«Administrar»** del pie de página, o agregando `#admin` a la dirección. Contraseña inicial: **`Frenos2026`** (cámbiala en la pestaña «Contraseña»).
@@ -59,7 +71,7 @@ Se abre con el enlace **«Administrar»** del pie de página, o agregando `#admi
 | Productos (Excel) | Lee un `.xlsx`, `.xls` o `.csv` con las columnas Código, Descripción, Marca, Medida, Familia, Subfamilia. Muestra una vista previa (nuevos, con cambios, sin cambios) y deja **combinar** o **reemplazar** el catálogo. También descarga una plantilla y el Excel con los productos actuales. |
 | Fotos | Arrastra fotos o una carpeta. Cada foto se nombra con el código del producto (`30610-01J60NBN.jpg`), se ajusta a 520 px y se guarda en WebP. |
 | Descargar HTML | Genera **toda la página en un solo archivo HTML** (diseño, programas, productos, fotos y este mismo panel). Se abre con doble clic y funciona sin internet. Calidad de fotos: normal (≈14 MB), alta o sin fotos del catálogo. |
-| Contraseña | Cambia la contraseña; queda guardada en el próximo HTML que descargues. |
+| Accesos | Crea y borra los usuarios que ven los códigos, y cambia la contraseña del panel. Todo queda guardado en el próximo HTML que descargues. |
 
 Cómo funciona:
 

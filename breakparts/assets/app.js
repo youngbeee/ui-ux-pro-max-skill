@@ -260,6 +260,7 @@ function card(it, k) {
     <button class="card__open" type="button" data-open="${it.slug}" aria-label="Ver ficha: ${esc(it.desc)}">
       <div class="card__media">${media}<span class="card__tag">${esc(famName(it.fam))}</span></div>
       <div class="card__body">
+        <span class="card__cod mono">${esc(it.cod)}</span>
         <h3 class="card__desc">${esc(it.desc)}</h3>
         <div class="card__meta">${meta}</div>
         <span class="card__price">Precio: <b>Consultar precio</b></span>

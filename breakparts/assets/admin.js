@@ -103,7 +103,7 @@ const session = {
 /* ---------- abrir / cerrar ---------- */
 function showBody(on) {
   $("#adm-login").hidden = on; $("#adm-body").hidden = !on;
-  if (on) { kpis(); } else setTimeout(() => $("#adm-pass").focus(), 50);
+  if (on) { kpis(); renderUsers(); } else setTimeout(() => $("#adm-pass").focus(), 50);
 }
 async function openAdmin() {
   if (!dlg.open) dlg.showModal();
@@ -323,6 +323,37 @@ $("#img-dir").addEventListener("change", e => { addPhotos([...e.target.files]); 
 dropZone($("#img-drop"), addPhotos);
 dropZone($("#xl-drop"), fs => takeExcel(fs[0]));
 
+/* ---------- usuarios que ven los códigos ---------- */
+const USERS = () => (window.BP_ADMIN && Array.isArray(window.BP_ADMIN.users)) ? window.BP_ADMIN.users : [];
+function renderUsers() {
+  const l = USERS();
+  $("#us-list").innerHTML = l.length
+    ? `<table><thead><tr><th>Usuario</th><th>Acceso</th><th></th></tr></thead><tbody>${l.map((x, k) => `<tr><td>${esc(x.u)}</td><td>Ve los códigos</td><td style="text-align:right"><button class="btn btn--line" type="button" data-us-del="${k}" style="min-height:34px;padding:0 12px">Borrar</button></td></tr>`).join("")}</tbody></table>`
+    : `<p class="adm-note" style="padding:12px">Todavía no hay usuarios. Mientras tanto, todos entran como invitados (también puedes entrar con el usuario «admin» y la contraseña del panel).</p>`;
+}
+$("#us-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const m = $("#us-msg"), u = $("#us-name").value.trim().toLowerCase(), p = $("#us-pass").value;
+  m.className = "adm-msg bad";
+  if (!/^[a-z0-9._-]{3,30}$/.test(u)) { m.textContent = "El usuario debe tener de 3 a 30 letras o números (sin espacios)."; return; }
+  if (u === "admin") { m.textContent = "«admin» está reservado para la contraseña del panel."; return; }
+  if (USERS().some(x => x.u === u)) { m.textContent = "Ese usuario ya existe. Bórralo primero si quieres cambiar su contraseña."; return; }
+  if (p.length < 4) { m.textContent = "La contraseña debe tener al menos 4 caracteres."; return; }
+  const h = await sha(u + "\n" + p);
+  window.BP_ADMIN = Object.assign({}, window.BP_ADMIN, { users: [...USERS(), { u, h }] });
+  e.target.reset(); renderUsers(); setDirty(true);
+  m.className = "adm-msg ok"; m.textContent = `Usuario «${u}» creado. Descarga el HTML para guardarlo.`;
+});
+$("#us-list").addEventListener("click", e => {
+  const b = e.target.closest("[data-us-del]"); if (!b) return;
+  const l = USERS().slice(), x = l[+b.dataset.usDel];
+  if (!x || !confirm(`¿Borrar el usuario «${x.u}»?`)) return;
+  l.splice(+b.dataset.usDel, 1);
+  window.BP_ADMIN = Object.assign({}, window.BP_ADMIN, { users: l });
+  renderUsers(); setDirty(true);
+  const m = $("#us-msg"); m.className = "adm-msg ok"; m.textContent = `Usuario «${x.u}» borrado. Descarga el HTML para guardarlo.`;
+});
+
 /* ---------- contraseña: cambiar ---------- */
 $("#pw-form").addEventListener("submit", async e => {
   e.preventDefault();
@@ -354,6 +385,8 @@ function setScript(doc, id, code, type) {
 }
 async function buildHTML(q, progress) {
   const doc = new DOMParser().parseFromString(window.BP_PRISTINE, "text/html");
+  doc.documentElement.classList.remove("gate-on", "ver-cod", "invitado");   // el modo de acceso lo decide cada visitante
+  if (!doc.documentElement.classList.length) doc.documentElement.removeAttribute("class");
   const step = (t, p) => progress(t, p);
   // Lo que no debe viajar en el archivo: ajustes de una vista previa, scripts externos y metadatos de la página anfitriona
   const drop = el => el && el.parentNode && el.parentNode.removeChild(el);
@@ -405,7 +438,7 @@ async function buildHTML(q, progress) {
   step("Armando el archivo…", 94);
   setScript(doc, "bp-embed", "window.BP_EMBED = " + safeJSON(docOf(list)) + ";");
   setScript(doc, "bp-imgs", "window.BP_IMGS = " + safeJSON(imgs) + ";");
-  setScript(doc, "bp-admin", "window.BP_ADMIN = " + safeJSON({ hash: HASH() }) + ";");
+  setScript(doc, "bp-admin", "window.BP_ADMIN = " + safeJSON({ hash: HASH(), users: USERS() }) + ";");
   return { html: "<!doctype html>\n" + doc.documentElement.outerHTML, n: list.length, fotos: Object.keys(imgs).length };
 }
 $("#html-go").addEventListener("click", async () => {
