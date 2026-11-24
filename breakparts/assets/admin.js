@@ -57,7 +57,9 @@ function setDirty(on) {
   dirty = on;
   $("#adm-dirty").hidden = !on;
   $('[data-tab="html"]').classList.toggle("dirty", on);
+  document.documentElement.classList.toggle("adm-sucio", on);   // punto de aviso en la barra de administrador
 }
+const isAdminMode = () => document.documentElement.classList.contains("es-admin");
 addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 function kpis() {
   if (!window.BP_APP) return;
@@ -105,20 +107,21 @@ function showBody(on) {
   $("#adm-login").hidden = on; $("#adm-body").hidden = !on;
   if (on) { kpis(); renderUsers(); } else setTimeout(() => $("#adm-pass").focus(), 50);
 }
-async function openAdmin() {
+async function openAdmin(k) {
   if (!dlg.open) dlg.showModal();
   $("#adm-mode").textContent = SINGLE ? `Archivo de un solo HTML · datos del ${window.BP_EMBED.generado || "—"}` : FROM_DISK ? "Sitio abierto desde la carpeta" : "Sitio en línea";
   $("#html-q").hidden = SINGLE;
   $("#json-card").hidden = SINGLE;
   await ready;
-  showBody(session.get());
+  showBody(session.get() || isAdminMode());   // con la cuenta de administrador no se vuelve a pedir la contraseña
+  if (typeof k === "string") tab(k);
 }
 function closeAdmin() {
   dlg.close();
   const t = $("#toast"); if (t && t.parentElement === dlg) document.body.appendChild(t);
   if (location.hash === "#admin") history.replaceState(history.state, "", location.pathname + location.search);
 }
-$("#open-admin")?.addEventListener("click", openAdmin);
+$("#open-admin")?.addEventListener("click", () => openAdmin());
 $("#adm-close").addEventListener("click", closeAdmin);
 dlg.addEventListener("cancel", e => { e.preventDefault(); closeAdmin(); });
 if (location.hash === "#admin") openAdmin();
@@ -332,7 +335,7 @@ const USERS = () => (window.BP_ADMIN && Array.isArray(window.BP_ADMIN.users)) ? 
 function renderUsers() {
   const l = USERS();
   $("#us-list").innerHTML = l.length
-    ? `<table><thead><tr><th>Usuario</th><th>Acceso</th><th></th></tr></thead><tbody>${l.map((x, k) => `<tr><td>${esc(x.u)}</td><td>Ve los códigos</td><td style="text-align:right"><button class="btn btn--line" type="button" data-us-del="${k}" style="min-height:34px;padding:0 12px">Borrar</button></td></tr>`).join("")}</tbody></table>`
+    ? `<table><thead><tr><th>Usuario</th><th>Tipo de cuenta</th><th></th></tr></thead><tbody>${l.map((x, k) => `<tr><td>${esc(x.u)}</td><td><select class="adm-role" data-us-role="${k}" aria-label="Tipo de cuenta de ${esc(x.u)}"><option value="user"${x.r === "admin" ? "" : " selected"}>Ve los códigos</option><option value="admin"${x.r === "admin" ? " selected" : ""}>Administrador</option></select></td><td style="text-align:right"><button class="btn btn--line" type="button" data-us-del="${k}" style="min-height:34px;padding:0 12px">Borrar</button></td></tr>`).join("")}</tbody></table>`
     : `<p class="adm-note" style="padding:12px">Todavía no hay usuarios. Mientras tanto, todos entran como invitados (también puedes entrar con el usuario «admin» y la contraseña del panel).</p>`;
 }
 $("#us-form").addEventListener("submit", async e => {
@@ -344,9 +347,18 @@ $("#us-form").addEventListener("submit", async e => {
   if (USERS().some(x => x.u === u)) { m.textContent = "Ese usuario ya existe. Bórralo primero si quieres cambiar su contraseña."; return; }
   if (p.length < 4) { m.textContent = "La contraseña debe tener al menos 4 caracteres."; return; }
   const h = await sha(u + "\n" + p);
-  window.BP_ADMIN = Object.assign({}, window.BP_ADMIN, { users: [...USERS(), { u, h }] });
+  const nu = $("#us-role").value === "admin" ? { u, h, r: "admin" } : { u, h };
+  window.BP_ADMIN = Object.assign({}, window.BP_ADMIN, { users: [...USERS(), nu] });
   e.target.reset(); renderUsers(); setDirty(true);
   m.className = "adm-msg ok"; m.textContent = `Usuario «${u}» creado. Descarga el HTML para guardarlo.`;
+});
+$("#us-list").addEventListener("change", e => {
+  const s = e.target.closest("[data-us-role]"); if (!s) return;
+  const l = USERS().map(x => Object.assign({}, x)), x = l[+s.dataset.usRole]; if (!x) return;
+  if (s.value === "admin") x.r = "admin"; else delete x.r;
+  window.BP_ADMIN = Object.assign({}, window.BP_ADMIN, { users: l });
+  setDirty(true);
+  const m = $("#us-msg"); m.className = "adm-msg ok"; m.textContent = `«${x.u}» ahora es ${x.r === "admin" ? "administrador" : "usuario que ve los códigos"}. Descarga el HTML para guardarlo.`;
 });
 $("#us-list").addEventListener("click", e => {
   const b = e.target.closest("[data-us-del]"); if (!b) return;
@@ -389,7 +401,7 @@ function setScript(doc, id, code, type) {
 }
 async function buildHTML(q, progress) {
   const doc = new DOMParser().parseFromString(window.BP_PRISTINE, "text/html");
-  doc.documentElement.classList.remove("gate-on", "ver-cod", "invitado");   // el modo de acceso lo decide cada visitante
+  doc.documentElement.classList.remove("gate-on", "ver-cod", "invitado", "es-admin", "adm-sucio");   // el modo de acceso lo decide cada visitante
   if (!doc.documentElement.classList.length) doc.documentElement.removeAttribute("class");
   const step = (t, p) => progress(t, p);
   // Lo que no debe viajar en el archivo: ajustes de una vista previa, scripts externos y metadatos de la página anfitriona
@@ -470,4 +482,33 @@ $("#html-go").addEventListener("click", async () => {
       : "No se pudo generar el archivo: " + (e.message || e);
   } finally { btn.disabled = false; setTimeout(() => bar.hidden = true, 1200); }
 });
+
+/* ---------- edición desde la página (cuenta de administrador) ---------- */
+// «fpe336», «FPE 336» o «fpe-0336» se guardan como FPE0336
+const fpeFix = v => { const c = String(v || "").toUpperCase().replace(/\s+/g, ""), m = /^FPE-?0*(\d{1,6})$/.exec(c); return m ? "FPE" + m[1].padStart(4, "0") : c; };
+window.BP_ADMIN_UI = {
+  isNew: s => NEW_IMGS.has(s),
+  open: k => openAdmin(k),
+  setFpe(slug, v) {
+    if (!isAdminMode()) return { ok: false, msg: "Entra con una cuenta de administrador." };
+    const code = fpeFix(v);
+    if (!code) return { ok: false, msg: "Escribe un código." };
+    if (!/^[A-Z0-9][A-Z0-9._\/-]{1,30}$/.test(code)) return { ok: false, msg: "Usa solo letras, números, guiones o puntos (sin espacios)." };
+    const list = rows(), o = list.find(x => x.slug === slug); if (!o) return { ok: false, msg: "Producto no encontrado." };
+    const other = list.find(x => x !== o && String(x.fpe).toUpperCase() === code);
+    if (other) return { ok: false, msg: `${code} ya lo usa otro producto (${other.cod}).` };
+    if (o.fpe === code) return { ok: true, fpe: code };
+    o.fpe = code; commit(list); return { ok: true, fpe: code };
+  },
+  async setPhoto(slug, file) {
+    if (!isAdminMode()) throw new Error("sin permiso");
+    const url = await resize(file), list = rows(), o = list.find(x => x.slug === slug);
+    IMGS()[slug] = url; o.img = 1; NEW_IMGS.add(slug); commit(list); return url;
+  },
+  removePhoto(slug) {
+    if (!isAdminMode()) return;
+    const list = rows(), o = list.find(x => x.slug === slug);
+    delete IMGS()[slug]; NEW_IMGS.delete(slug); o.img = 0; commit(list);
+  }
+};
 })();

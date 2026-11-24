@@ -168,8 +168,10 @@ function ingestData(d) {
 
 /* ---------- Búsqueda ---------- */
 const SYN = { BOMBAS: "BOMBA", BOMBINES: "BOMBIN", PISTONES: "PISTON", PASTILLAS: "PASTILLA", KITS: "KIT", SERVOS: "SERVO", CALIPERS: "CALIPER", CALIPERES: "CALIPER", FRENOS: "FRENO", EMBRAGUES: "EMBRAGUE", MASTERS: "MASTER", HILUX: "HI-LUX", HIACE: "HI-ACE", "HI LUX": "HI-LUX" };
+// «fpe336», «FPE 336» o «fpe-0336» se leen como FPE0336
+const fpeNorm = q => norm(q).replace(/\bFPE[\s-]*0*(\d{1,6})\b/g, (m, n) => "FPE" + n.padStart(4, "0"));
 function parseQuery(q) {
-  return norm(q).replace(/\bHI\s+(LUX|ACE)\b/g, "HI-$1").split(/\s+/).filter(Boolean).map(t => SYN[t] || t);
+  return fpeNorm(q).replace(/\bHI\s+(LUX|ACE)\b/g, "HI-$1").split(/\s+/).filter(Boolean).map(t => SYN[t] || t);
 }
 function matchTok(it, t) {
   if (it.key.includes(t)) return true;
@@ -205,7 +207,12 @@ function passes(it, skip, toks) {
 }
 
 function apply() {
-  const toks = parseQuery(st.q), qc = compact(st.q);
+  const toks = parseQuery(st.q), qc = compact(fpeNorm(st.q));
+  // Búsqueda de un código exacto (FPE u original): si los filtros lo esconden, se busca en todo el catálogo
+  if (qc.length >= 4 && (st.fam || st.sub || st.marca || st.medida || st.sis || st.foto)) {
+    const hit = ITEMS.filter(it => it.cc === qc || it.fc === qc);
+    if (hit.length && !hit.some(it => passes(it, null, toks))) Object.assign(st, { fam: "", sub: "", marca: "", medida: "", sis: "", foto: false });
+  }
   FILTERED = ITEMS.filter(it => passes(it, null, toks));
   const loc = (a, b) => a.localeCompare(b, "es", { numeric: true });
   if (st.sort === "name") FILTERED.sort((a, b) => loc(a.desc, b.desc) || a.i - b.i);
@@ -275,6 +282,7 @@ function card(it, k) {
     </button>
     <div class="card__foot">
       <button class="card__add${inCart(it.slug) ? " added" : ""}" type="button" data-add="${it.slug}" aria-label="Agregar a la cotización: ${esc(it.desc)}">${inCart(it.slug) ? `✓ ${cartQty(it.slug)} en lista` : "+ Agregar"}</button>
+      <button class="card__edit" type="button" data-edit="${it.slug}" aria-label="Editar foto y código: ${esc(it.desc)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg></button>
       <a class="card__wa" href="${waLink(productMsg(it))}" target="_blank" rel="noopener" aria-label="Consultar por WhatsApp: ${esc(it.desc)}">${WA_SVG}</a>
     </div>
   </article>`;
@@ -357,18 +365,24 @@ function flight(from, media) {
   if (!s.width || !t.height || s.bottom < 0 || s.top > innerHeight) return null;
   return `translate(${(s.left + s.width / 2 - (t.left + t.width / 2)).toFixed(1)}px,${(s.bottom - t.bottom).toFixed(1)}px) scale(${(s.height / t.height).toFixed(4)})`;
 }
-function openProduct(slug, push = true, from = null) {
-  const it = BY_SLUG.get(slug) || BY_URL.get(String(slug).toLowerCase()); if (!it) return;
-  slug = it.slug;
-  current = it;
-  const media = $("#p-media");
-  if (CUTS.has(slug)) media.innerHTML = `<img class="pp-cut" src="${asset(`assets/estante/${slug}.webp`)}" alt="${esc(it.desc)}" draggable="false">`;
+// Foto de la ficha: recorte del estante, foto del producto o dibujo. Si el administrador subió una foto nueva, se usa esa.
+function fichaMedia(it, from = null) {
+  const slug = it.slug, media = $("#p-media");
+  if (CUTS.has(slug) && !(window.BP_ADMIN_UI && window.BP_ADMIN_UI.isNew(slug))) media.innerHTML = `<img class="pp-cut" src="${asset(`assets/estante/${slug}.webp`)}" alt="${esc(it.desc)}" draggable="false">`;
   else if (it.img) {
     media.innerHTML = `<img class="pp-photo" data-slug="${it.slug}" alt="${esc(it.desc)}" draggable="false">`;
     const im = $("img", media);
     if (from && from.tagName === "IMG" && from.currentSrc) im.src = from.currentSrc; // la miniatura ya cargada, mientras llega la foto grande
     IMG.full(it.slug).then(src => { const big = new Image(); big.onload = () => { if (current === it && im.isConnected) im.src = src; }; big.onerror = () => { if (!im.getAttribute("src")) im.src = src; }; big.src = src; }).catch(() => {});
   } else media.innerHTML = noImg(it.fam, "Imagen no disponible");
+  return media;
+}
+function openProduct(slug, push = true, from = null) {
+  const it = BY_SLUG.get(slug) || BY_URL.get(String(slug).toLowerCase()); if (!it) return;
+  slug = it.slug;
+  current = it;
+  const media = fichaMedia(it, from);
+  fillEdit(it);
   $("#p-cat").textContent = `${famName(it.fam)} · ${subName(it.sub)}`;
   $("#p-desc").textContent = it.desc;
   $("#p-tag").textContent = [it.marca, it.medida].filter(Boolean).join(" · ");
@@ -400,6 +414,41 @@ function openProduct(slug, push = true, from = null) {
   if (push && C.sincronizarURL) { try { const p = new URLSearchParams(location.search); p.set("producto", urlId(it)); history.pushState({ p: slug }, "", "?" + p); } catch {} }
   document.title = `${it.desc} | FRENOS PARTS ESTOC`;
 }
+/* ---------- Edición en la ficha (cuenta de administrador; la guarda assets/admin.js) ---------- */
+function fillEdit(it) {
+  if (!$("#p-edit")) return;
+  $("#pe-fpe").value = it.fpe || "";
+  $("#pe-orig").textContent = it.cod;
+  $("#pe-img").innerHTML = it.img ? imgTag(it) : noImg(it.fam, "Sin foto");
+  $("#pe-del").disabled = !it.img;
+  const m = $("#pe-msg"); m.textContent = ""; m.className = "pedit__msg";
+}
+function afterEdit(slug, msg, ok = true) {
+  const it = BY_SLUG.get(slug); if (!it) return;
+  current = it;
+  fichaMedia(it);
+  $("#p-cod").textContent = it.show;
+  $("#p-wa").href = waLink(productMsg(it));
+  fillEdit(it);
+  const m = $("#pe-msg"); m.textContent = msg; m.className = "pedit__msg " + (ok ? "ok" : "bad");
+}
+const ADMUI = () => window.BP_ADMIN_UI;
+$("#p-edit")?.addEventListener("submit", e => {
+  e.preventDefault(); if (!current || !ADMUI()) return;
+  const slug = current.slug, r = ADMUI().setFpe(slug, $("#pe-fpe").value);
+  if (r.ok) afterEdit(slug, `Código guardado: ${r.fpe}`);
+  else { const m = $("#pe-msg"); m.textContent = r.msg; m.className = "pedit__msg bad"; }
+});
+$("#pe-file")?.addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f || !current || !ADMUI()) return;
+  const slug = current.slug, m = $("#pe-msg"); m.textContent = "Procesando la foto…"; m.className = "pedit__msg";
+  try { await ADMUI().setPhoto(slug, f); afterEdit(slug, "Foto actualizada"); }
+  catch { afterEdit(slug, "No se pudo leer esa imagen. Prueba con un .jpg, .png o .webp.", false); }
+});
+$("#pe-del")?.addEventListener("click", () => {
+  if (!current || !ADMUI() || !confirm("¿Quitar la foto de este producto?")) return;
+  const slug = current.slug; ADMUI().removePhoto(slug); afterEdit(slug, "Foto quitada");
+});
 function closeProduct(fromPop) {
   const d = $("#product"); if (!d.open || d.classList.contains("closing")) return;
   const end = () => { d.classList.remove("closing"); ppRelease(); d.close ? d.close() : d.removeAttribute("open"); };
@@ -638,6 +687,8 @@ $("#close-filters").addEventListener("click", closeFilters);
 $("#apply-filters").addEventListener("click", () => { closeFilters(); goCatalog(); });
 
 document.addEventListener("click", e => {
+  const ed = e.target.closest("[data-edit]");
+  if (ed) { openProduct(ed.dataset.edit); setTimeout(() => { $("#p-edit")?.scrollIntoView({ block: "center", behavior: "smooth" }); $("#pe-fpe")?.focus({ preventScroll: true }); }, 450); return; }
   const add = e.target.closest("[data-add]");
   if (add) { e.preventDefault(); const s = add.dataset.add; if (inCart(s)) { openQuote(); } else { setQty(s, 1); toast("Producto agregado a tu cotización"); } return; }
   const op = e.target.closest("[data-open]");

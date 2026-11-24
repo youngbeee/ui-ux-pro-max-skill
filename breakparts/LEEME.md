@@ -50,6 +50,20 @@ Para volver a sacar el Excel desde la web publicada: `python3 admin/exportar_exc
 
 Las familias y subfamilias nuevas aparecen solas en los filtros y en las categorías.
 
+## Cuenta de administrador
+
+Entra con el botón de persona de la cabecera → «Entrar con usuario» → usuario **`admin`** y la contraseña del panel (`Frenos2026`), o con cualquier cuenta de tipo «Administrador».
+
+- Aparece una **barra azul arriba** («Modo administrador») con: Panel, Cuentas, Guardar cambios (descarga el HTML) y Salir. Un punto naranja avisa de cambios sin guardar.
+- Cada tarjeta muestra un botón de **lápiz**: abre la ficha con el recuadro «Editar producto», donde se cambia el **código FPE** (no deja repetir uno que ya existe; «fpe336» se guarda como FPE0336), se **cambia la foto** o se **quita la foto**. También se ve el código original.
+- **Cuentas** abre el panel sin pedir otra contraseña. Ahí se crean cuentas «Ve los códigos» o «Administrador», se cambia el tipo de una cuenta y se borran.
+- Como la página es estática, los cambios quedan en esa pestaña del navegador hasta pulsar **Guardar cambios** y descargar el HTML (o, en un hosting con carpetas, descargar `productos.json`/`productos.js` desde el panel).
+
+## Buscador y códigos FPE
+
+- Se puede escribir el código FPE con o sin ceros: `fpe336`, `FPE 336` y `FPE0336` encuentran lo mismo.
+- Si se busca un código exacto (FPE u original) y los filtros activos lo esconden, el buscador quita esos filtros y muestra el producto.
+
 ## Códigos FPE (prueba)
 
 Cada producto tiene un **código FPE** (`FPE0001` a `FPE2755`, en el orden del catálogo) que reemplaza al código original en todo lo que se ve y se envía:

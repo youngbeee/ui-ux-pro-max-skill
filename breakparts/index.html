@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="assets/admin.css">
 <link rel="stylesheet" href="assets/acceso.css">
 <!-- Antes de pintar: recordar si este navegador entró con usuario o como invitado (assets/acceso.js lo confirma) -->
-<script>(function(){var c="gate-on";try{var a=JSON.parse(localStorage.getItem("bp-acceso")||"null");if(a&&a.m==="u")c="ver-cod";else if(a&&a.m==="g")c="invitado"}catch(e){}document.documentElement.classList.add(c)})();</script>
+<script>(function(){var c="gate-on";try{var a=JSON.parse(localStorage.getItem("bp-acceso")||"null");if(a&&a.m==="u")c=a.r==="admin"?"ver-cod es-admin":"ver-cod";else if(a&&a.m==="g")c="invitado"}catch(e){}document.documentElement.className+=" "+c})();</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "AutoPartsStore", "name": "FRENOS PARTS ESTOC", "description": "Repuestos para frenos y embragues: bombas, bombines, pistones, kits, pastillas, máster y servos. Catálogo digital con más de 2,700 productos y cotización por WhatsApp.", "telephone": "+51981232672", "url": "https://www.breakparts.pe/", "address": {"@type": "PostalAddress", "streetAddress": "Jr. Antonio Raimondi 450", "addressLocality": "La Victoria", "addressRegion": "Lima", "addressCountry": "PE"}, "contactPoint": {"@type": "ContactPoint", "telephone": "+51981232672", "contactType": "sales", "availableLanguage": "es"}}</script>
 </head>
 <body>
@@ -66,6 +66,18 @@
 </div>
 <noscript><p style="padding:16px">Para usar el catálogo activa JavaScript, o escríbenos por WhatsApp al 981 232 672: https://wa.me/51981232672</p></noscript>
 <a class="skip" href="#catalogo">Ir al catálogo</a>
+<!-- Barra del modo administrador: solo se ve con una cuenta de administrador -->
+<div class="admbar" id="admbar" role="region" aria-label="Modo administrador">
+  <div class="wrap admbar__in">
+    <p class="admbar__t"><b>Modo administrador</b><span> · Usa «Editar» en cada producto para cambiar su foto o su código FPE</span></p>
+    <div class="admbar__act">
+      <button type="button" id="ab-panel">Panel</button>
+      <button type="button" id="ab-cuentas">Cuentas</button>
+      <button type="button" id="ab-guardar" class="admbar__save">Guardar cambios</button>
+      <button type="button" id="ab-salir">Salir</button>
+    </div>
+  </div>
+</div>
 
 <div class="topbar">
   <div class="wrap topbar__in">
@@ -403,6 +415,21 @@
       <h2 class="pd__desc" id="p-desc"></h2>
       <p class="ppage__tag" id="p-tag"></p>
       <div class="pd__code"><span class="lbl">Código</span><span class="mono" id="p-cod"></span><button class="copy" type="button" id="p-copy">Copiar</button></div>
+      <form class="pedit" id="p-edit">
+        <p class="pedit__t"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>Editar producto <small>Modo administrador · código original: <span class="mono" id="pe-orig"></span></small></p>
+        <div class="pedit__row">
+          <div class="pedit__img" id="pe-img"></div>
+          <div class="pedit__f">
+            <label for="pe-fpe">Código FPE</label>
+            <div class="pedit__in"><input id="pe-fpe" autocomplete="off" spellcheck="false" placeholder="FPE0001"><button class="btn btn--dark" type="submit">Guardar</button></div>
+            <div class="pedit__in">
+              <label class="btn btn--line pedit__up">Cambiar foto<input type="file" id="pe-file" accept="image/*"></label>
+              <button class="btn btn--line" type="button" id="pe-del">Quitar foto</button>
+            </div>
+          </div>
+        </div>
+        <p class="pedit__msg" id="pe-msg" role="status"></p>
+      </form>
       <div class="ppage__price"><b>Consultar precio</b><span>Te respondemos por WhatsApp con precio, stock y plazo.</span></div>
       <div class="pd__buy" id="p-buy">
         <div class="qty" aria-label="Cantidad"><button type="button" data-q="-1" aria-label="Menos">−</button><input id="p-qty" type="number" min="1" max="999" value="1" inputmode="numeric" aria-label="Cantidad"><button type="button" data-q="1" aria-label="Más">+</button></div>
@@ -639,13 +666,14 @@
       </section>
 
       <section class="adm-pane" data-pane="clave" role="tabpanel" hidden>
-        <h3>Usuarios que ven los códigos</h3>
+        <h3>Cuentas</h3>
         <div class="adm-card">
-          <p>Al abrir la página se elige <b>«Entrar con usuario»</b> (se ven los códigos de los productos) o <b>«Entrar como invitado»</b> (sin códigos). Crea aquí los usuarios para tus clientes o vendedores.</p>
+          <p>Al abrir la página se elige <b>«Entrar con usuario»</b> (se ven los códigos de los productos) o <b>«Entrar como invitado»</b> (sin códigos). Crea aquí las cuentas: <b>Ve los códigos</b> para clientes y vendedores; <b>Administrador</b> para quien puede editar fotos y códigos FPE desde la página y entrar a este panel sin otra contraseña.</p>
           <div class="adm-table" id="us-list"></div>
           <form class="adm-row" id="us-form" style="align-items:flex-end">
             <div class="field" style="flex:1;min-width:160px"><label for="us-name">Usuario</label><input id="us-name" autocomplete="off" autocapitalize="none" spellcheck="false" pattern="[A-Za-z0-9._-]{3,30}" title="De 3 a 30 letras, números, punto, guion o guion bajo" required></div>
             <div class="field" style="flex:1;min-width:160px"><label for="us-pass">Contraseña</label><input id="us-pass" type="text" autocomplete="off" minlength="4" required></div>
+            <div class="field" style="min-width:170px"><label for="us-role">Tipo de cuenta</label><select id="us-role"><option value="user">Ve los códigos</option><option value="admin">Administrador</option></select></div>
             <button class="btn btn--brand" type="submit">Agregar usuario</button>
           </form>
           <p class="adm-msg" id="us-msg" role="status"></p>

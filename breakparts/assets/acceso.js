@@ -50,15 +50,20 @@ const write = v => { try { v ? localStorage.setItem(KEY, JSON.stringify(v)) : lo
 const ADM = () => window.BP_ADMIN || {};
 const users = () => Array.isArray(ADM().users) ? ADM().users : [];
 const valid = a => a && a.m === "u" && (a.u === "admin" ? a.h === ADM().hash : users().some(x => x.u === a.u && x.h === a.h));
+// cuenta de administrador: «admin» (contraseña del panel) o un usuario con tipo «Administrador»
+const roleOf = u => u === "admin" || (users().find(x => x.u === u) || {}).r === "admin" ? "admin" : "user";
 
 let mode = null;
 function setMode(m, u) {
   mode = m;
+  const adm = m === "u" && roleOf(u) === "admin";
+  root.classList.toggle("es-admin", adm);
   root.classList.toggle("ver-cod", m === "u");
   root.classList.toggle("invitado", m === "g");
   const chip = $("#acc-chip");
   if (chip) {
-    chip.querySelector("span").textContent = m === "u" ? u : "Invitado";
+    chip.querySelector("span").textContent = m === "u" ? (adm && u !== "admin" ? `${u} · admin` : u) : "Invitado";
+    chip.classList.toggle("adm", adm);
     chip.setAttribute("aria-label", m === "u" ? `Sesión de ${u}: códigos visibles. Cambiar acceso` : "Entraste como invitado. Cambiar acceso");
     chip.classList.toggle("on", m === "u");
   }
@@ -106,7 +111,7 @@ $("#gate-form").addEventListener("submit", async e => {
   if (u === "admin" && ADM().hash && await sha(p) === ADM().hash) ok = { m: "u", u, h: ADM().hash };
   else { const h = await userHash(u, p); if (users().some(x => x.u === u && x.h === h)) ok = { m: "u", u, h }; }
   if (!ok) { err.textContent = "Usuario o contraseña incorrectos."; $("#gate-pass").select(); return; }
-  write(ok); setMode("u", u); e.target.reset(); err.textContent = ""; closeGate();
+  ok.r = roleOf(u); write(ok); setMode("u", u); e.target.reset(); err.textContent = ""; closeGate();
 });
 $("#acc-chip")?.addEventListener("click", openGate);
 
@@ -126,4 +131,15 @@ if (valid(saved)) setMode("u", saved.u);
 else if (saved && saved.m === "g") setMode("g");
 else { if (saved) write(null); setMode(null); openGate(); }
 window.BP_ACCESO = { abrir: openGate, modo: () => mode };
+
+/* barra del modo administrador */
+const AB = id => document.getElementById(id);
+const panel = k => window.BP_ADMIN_UI ? window.BP_ADMIN_UI.open(k) : null;
+AB("ab-panel")?.addEventListener("click", () => panel("datos"));
+AB("ab-cuentas")?.addEventListener("click", () => panel("clave"));
+AB("ab-guardar")?.addEventListener("click", () => panel("html"));
+AB("ab-salir")?.addEventListener("click", () => {
+  if (root.classList.contains("adm-sucio") && !confirm("Tienes cambios sin guardar en un archivo. ¿Salir igual? Seguirán en esta pestaña hasta que la cierres.")) return;
+  write(null); setMode(null); openGate();
+});
 })();
